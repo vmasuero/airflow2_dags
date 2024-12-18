@@ -20,6 +20,8 @@ from airflow.utils.helpers import chain
 
 from dask.distributed import Client, LocalCluster, Future, as_completed, fire_and_forget
 
+
+#Prueba Ql
 from redis import Redis
 
 CLUSTER_DASK_IP = 'dask-cluster-airflow-scheduler.dask-cluster:8786'
