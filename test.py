@@ -1,5 +1,5 @@
 
-m airflow import DAG
+from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from datetime import datetime
 
