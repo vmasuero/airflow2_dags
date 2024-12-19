@@ -832,6 +832,7 @@ with DAG(
     schedule_interval= "@hourly",
     default_args={
         "depends_on_past": False,
+        'owner': 'Vmasuero',
         "retries": 3,
         "retry_delay": timedelta(minutes=1),
     },

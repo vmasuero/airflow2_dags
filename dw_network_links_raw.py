@@ -131,6 +131,7 @@ with DAG(
     schedule_interval= "30 9 * * *",
     default_args={
         "depends_on_past": False,
+        'owner': 'Vmasuero',
         "retries": 15,
         'max_active_runs': 1,
         "retry_delay": timedelta(minutes=30)
