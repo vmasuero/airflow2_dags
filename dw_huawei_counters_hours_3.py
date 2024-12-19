@@ -21,10 +21,9 @@ from airflow.utils.helpers import chain
 from dask.distributed import Client, LocalCluster, Future, as_completed, fire_and_forget
 
 
-#Prueba Ql
 from redis import Redis
 
-CLUSTER_DASK_IP = 'dask-cluster-airflow-scheduler.dask-cluster:8786'
+
 
 PM_HUAWEI_SERVERS = [
     'HUAWEI_CM_0',
@@ -53,7 +52,11 @@ HUAWEI_COUNTER_INVENTORY_S3 = 'Huawei/Inventory/HUAWEI_COUNTERS_INVENTORY.csv'
 SAMPLING = 60
 HUAWEI_COUNTERS_PATH = 'Huawei/Counters_%smin'%SAMPLING
 
-REDIS_URL = 'redis-huawei-master.airflow'
+NAMESPACE_K8S = 'airflow2'
+
+CLUSTER_DASK_IP = 'dask-cluster-airflow-scheduler.dask-cluster:8786'
+
+REDIS_URL = 'redis-huawei-master.airflow2'
 REDIS_EXPIRE = 60*60*24*2  #2 dias
 
 VERSION = 5
@@ -154,7 +157,7 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
 def check_redis(**kwargs):
 
    _redis_api = Redis(REDIS_URL, socket_connect_timeout=1) # short timeout for the test
-   
+   print(REDIS_URL)
    if not _redis_api.ping():
        raise AirflowFailException("PING REDIS TEST: NOK")
        
@@ -204,7 +207,7 @@ def get_list_files(remote_path, conn_id, ti=None, **kwargs):
 @task(
     queue="kubernetes",
     executor_config={
-                "KubernetesExecutor": {"namespace": "airflow"}
+                "KubernetesExecutor": {"namespace": NAMESPACE_K8S}
     },
     pool="HUAWEI_CM_POOL_HOURS"
 )
