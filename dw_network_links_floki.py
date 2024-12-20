@@ -82,8 +82,8 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
 def dw_files(tab_floki:str, ti=None,  **kwargs):
 
 
-    _url_floki = ti.xcom_pull(task_ids="get_dates", key="url_floki")
-    _output_directory = ti.xcom_pull(task_ids="get_dates", key="output_directory")
+    _url_floki = ti.xcom_pull(task_ids="initialization", key="url_floki")
+    _output_directory = ti.xcom_pull(task_ids="initialization", key="output_directory")
     
     _url = "%s&tab=%s"%(
         _url_floki,
@@ -143,6 +143,6 @@ with DAG(
 
         for i,tab in enumerate(FILTER_TAB):
             _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
-            dw_files(tab_floki=tab)
+            dw_files(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
    
     initialization() >> tasks_dw_floki
