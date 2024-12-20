@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import pendulum
 import requests
 import pandas as pd
+import urllib.parse
 
 
 from airflow import DAG
@@ -18,19 +19,19 @@ PROXY_PARAMS = {
 
 FILTER_TAB = [
     'IPRAN',
-    'CORE INT.',
-    'PEERING NAC',
-    'SOLOP',
-    'HFC', 
-    'RED HFC CMTS',
-    'HFC FTTH',
-    'CACHE',
-    'ISP PEERING CONTENIDO',
-    'ISP-CACHE-CONTENIDO',
-    'PEERING INT',
-    'SW-HFC-ACCESO',
-    'MOVIL-PE',
-    'SWITCH CORP - PLAN',
+    #'CORE INT.',
+    #'PEERING NAC',
+    #'SOLOP',
+    #'HFC', 
+    #'RED HFC CMTS',
+    #'HFC FTTH',
+    #'CACHE',
+    #'ISP PEERING CONTENIDO',
+    #'ISP-CACHE-CONTENIDO',
+    #'PEERING INT',
+    #'SW-HFC-ACCESO',
+    #'MOVIL-PE',
+    #'SWITCH CORP - PLAN',
     'RED MPLS CORPORACIONES'
 ]
 
@@ -73,7 +74,55 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
     ti.xcom_push(key='Date Prefix', value=_date_prefix)
     
     return True
+ 
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def dw_files(tab_floki:str, ti=None,  **kwargs):
+
+
+    _url_floki = ti.xcom_pull(task_ids="get_dates", key="url_floki")
+    _output_directory = ti.xcom_pull(task_ids="get_dates", key="output_directory")
     
+    _url = "%s&tab=%s"%(
+        _url_floki,
+        urllib.parse.quote(tab_floki)
+
+    )
+    print("URL: %s"%_url)
+
+    _req = requests.get(_url, proxies=PROXY_PARAMS)
+
+    if _req.status_code != 200:
+        raise AirflowFailException("Codigo de error recibido %s"%str(_req.status_code))
+
+    _headers = _req.headers
+
+    if 'application/x-download' not in _headers['Content-Type']:
+        raise AirflowFailException("Tipo datos desconocid %s"%_headers['Content-Type'])
+
+    if 'filename' not in _headers['Content-Disposition']:
+        raise AirflowFailException("Cotenido desconocido %s"%_headers['Content-Disposition'])
+    
+    _filename = _headers['Content-Disposition'].replace("\"","").split('filename=')[1]
+    print(_headers)
+
+    _filename = "%s/%s"%(
+        _output_directory,
+        _filename
+        )
+    
+    ti.xcom_push(key='filename', value=_filename)
+
+    
+    
+    #print("Writing content in file: %s"%_filename)
+    #open(_filename, 'wb').write(_req.content)
+
+
+    return True
+
+ 
 with DAG(
     dag_id='dw_network_links_floki',
     schedule_interval= "30 10 * * *",
@@ -89,5 +138,10 @@ with DAG(
     tags=['development', 'bw','floki']
 ) as dag:
 
+    with TaskGroup(group_id='dw_tasks') as tasks_dw_floki:
+
+        for i,tab in enumerate(FILTER_TAB):
+            _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
+            dw_files(tab_floki=tab)
    
-    initialization()
+    initialization() >> tasks_dw_floki
