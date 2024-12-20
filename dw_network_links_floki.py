@@ -8,6 +8,7 @@ import urllib.parse
 from airflow import DAG
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowException, AirflowFailException, AirflowSkipException
+from airflow.utils.task_group import TaskGroup
 
 URL_API = 'http://200.27.26.27/cgi-bin/reporte_diario.pl'
 #http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2023&mes=12&dia=23&tab=CORE%20INT.
