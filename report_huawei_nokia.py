@@ -6,10 +6,10 @@ import boto3
 
 from airflow import DAG
 from airflow.utils.task_group import TaskGroup
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.exceptions import AirflowException, AirflowSkipException
 from airflow.decorators import dag, task
 from airflow.utils.helpers import chain
+from airflow.sensors.base import PokeReturnValue
 from io import StringIO,BytesIO
 #from dask.distributed import Client, LocalCluster, Future, as_completed, fire_and_forget
 
@@ -20,9 +20,7 @@ REGION = 'sa-santiago-1'
 NAMESPACE = 'axosppplfddw'
 BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGION)
-bucket_url = f'https://objectstorage.{REGION}.oraclecloud.com/n/{NAMESPACE}/b/{BUCKET}/o/arieso/tmp/file_arieso.csv'
 
-CONN_ID = 'S3_OCI'
 
 DIR_NOKIA = 'Nokia/Reports_60min'
 DIR_HUAWEI = 'Huawei/Reports_60min'
@@ -312,8 +310,10 @@ def cooncat_files( ti=None,  **kwargs):
     return True
     
 
-@task(
-    executor_config={'LocalExecutor': {}},
+@task.sensor(
+    poke_interval=60, 
+    timeout=3600, 
+    mode="reschedule"
 )
 def check_s3_file(ti=None,  **kwargs):
 
@@ -333,20 +333,18 @@ def check_s3_file(ti=None,  **kwargs):
     _bucket = _s3_api.Bucket(BUCKET)
     
 
-    _file_exists_huawei = list(_bucket.objects.filter(Prefix=_file_huawei))
-    _file_exists_nokia = list(_bucket.objects.filter(Prefix=_file_nokia))
+    _file_exists_huawei = len(list(_bucket.objects.filter(Prefix=_file_huawei))) > 0 
+    _file_exists_nokia = len(list(_bucket.objects.filter(Prefix=_file_nokia))) > 0
 
 
-    #if _file_exists_huawei & _file_exists_nokia:
-    #    print("Archivos encontrados")
-    #    return True
+    if _file_exists_huawei & _file_exists_nokia:
+        print("Archivos encontrados")
+        return PokeReturnValue(is_done=True, xcom_value="xcom_value")
        
-    #print("Archivo encontrado: %s    %s"%(_file_nokia,_file_exists_nokia))
-    #print("Archivo encontrado: %s    %s"%(_file_huawei,_file_exists_huawei))
-    print(_file_exists_huawei)
-    print(_file_exists_nokia)
-
-    return False
+    print("Archivo encontrado: %s    %s"%(_file_nokia,_file_exists_nokia))
+    print("Archivo encontrado: %s    %s"%(_file_huawei,_file_exists_huawei))
+    
+    return PokeReturnValue(is_done=False, xcom_value="xcom_value")
 
 
 
