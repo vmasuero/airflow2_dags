@@ -6,6 +6,7 @@ import boto3
 
 from airflow import DAG
 from airflow.utils.task_group import TaskGroup
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.exceptions import AirflowException, AirflowSkipException
 from airflow.decorators import dag, task
 from airflow.utils.helpers import chain
@@ -20,6 +21,8 @@ NAMESPACE = 'axosppplfddw'
 BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGION)
 bucket_url = f'https://objectstorage.{REGION}.oraclecloud.com/n/{NAMESPACE}/b/{BUCKET}/o/arieso/tmp/file_arieso.csv'
+
+CONN_ID = 'S3_OCI'
 
 DIR_NOKIA = 'Nokia/Reports_60min'
 DIR_HUAWEI = 'Huawei/Reports_60min'
@@ -308,7 +311,34 @@ def cooncat_files( ti=None,  **kwargs):
     
     return True
     
+
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def _check_s3_file(ti=None,  **kwargs):
+
+    _file_nokia = ti.xcom_pull(task_ids='get_dates', key='file_nokia')
+    _file_huawei = ti.xcom_pull(task_ids='get_dates', key='file_huawei')
     
+    print("Esperando archivo: %s"%_file_nokia)
+    print("Esperando archivo: %s"%_file_huawei)
+
+    s3_hook = S3Hook(aws_conn_id=CONN_ID)
+
+    _file_exists_huawei = s3_hook.check_for_key(key=_file_huawei, bucket_name=BUCKET)
+    _file_exists_nokia = s3_hook.check_for_key(key=_file_nokia, bucket_name=BUCKET)
+
+
+    if _file_exists_huawei & _file_exists_nokia:
+        print("Archivos encontrados")
+        return True
+       
+    print("Archivo encontrado: %s    %s"%(_file_nokia,_file_exists_nokia))
+    print("Archivo encontrado: %s    %s"%(_file_huawei,_file_exists_huawei))
+    return False
+
+
+
 with DAG(
     dag_id='report_huawei_nokia',
     schedule_interval= "@daily",
@@ -324,4 +354,4 @@ with DAG(
     max_active_runs=1
     ) as dag:
     
-        get_dates() #>> check_files() >> cooncat_files()
+        get_dates() >> _check_s3_file() #>> check_files() >> cooncat_files()
