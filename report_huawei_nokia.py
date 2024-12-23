@@ -333,8 +333,8 @@ def check_s3_file(ti=None,  **kwargs):
     _bucket = _s3_api.Bucket(BUCKET)
     
 
-    _file_exists_huawei = list(bucket.objects.filter(Prefix=_file_huawei))
-    _file_exists_nokia = list(bucket.objects.filter(Prefix=_file_nokia))
+    _file_exists_huawei = list(_bucket.objects.filter(Prefix=_file_huawei))
+    _file_exists_nokia = list(_bucket.objects.filter(Prefix=_file_nokia))
 
 
     #if _file_exists_huawei & _file_exists_nokia:
