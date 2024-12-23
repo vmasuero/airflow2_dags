@@ -324,4 +324,4 @@ with DAG(
     max_active_runs=1
     ) as dag:
     
-        get_dates() >> check_files() >> cooncat_files()
+        get_dates() #>> check_files() >> cooncat_files()
