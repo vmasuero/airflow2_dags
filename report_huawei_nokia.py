@@ -315,7 +315,7 @@ def cooncat_files( ti=None,  **kwargs):
 @task(
     executor_config={'LocalExecutor': {}},
 )
-def _check_s3_file(ti=None,  **kwargs):
+def check_s3_file(ti=None,  **kwargs):
 
     _file_nokia = ti.xcom_pull(task_ids='get_dates', key='file_nokia')
     _file_huawei = ti.xcom_pull(task_ids='get_dates', key='file_huawei')
@@ -330,7 +330,7 @@ def _check_s3_file(ti=None,  **kwargs):
     print("Esperando archivo: %s"%_file_nokia)
     print("Esperando archivo: %s"%_file_huawei)
 
-    _bucket = s3.Bucket(BUCKET)
+    _bucket = _s3_api.Bucket(BUCKET)
     
 
     _file_exists_huawei = list(bucket.objects.filter(Prefix=_file_huawei))
