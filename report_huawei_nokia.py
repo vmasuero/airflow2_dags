@@ -320,21 +320,32 @@ def _check_s3_file(ti=None,  **kwargs):
     _file_nokia = ti.xcom_pull(task_ids='get_dates', key='file_nokia')
     _file_huawei = ti.xcom_pull(task_ids='get_dates', key='file_huawei')
     
+    _s3_api = boto3.resource('s3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT 
+    )
+    
     print("Esperando archivo: %s"%_file_nokia)
     print("Esperando archivo: %s"%_file_huawei)
 
-    s3_hook = S3Hook(aws_conn_id=CONN_ID)
+    _bucket = s3.Bucket(BUCKET)
+    
 
-    _file_exists_huawei = s3_hook.check_for_key(key=_file_huawei, bucket_name=BUCKET)
-    _file_exists_nokia = s3_hook.check_for_key(key=_file_nokia, bucket_name=BUCKET)
+    _file_exists_huawei = list(bucket.objects.filter(Prefix=_file_huawei))
+    _file_exists_nokia = list(bucket.objects.filter(Prefix=_file_nokia))
 
 
-    if _file_exists_huawei & _file_exists_nokia:
-        print("Archivos encontrados")
-        return True
+    #if _file_exists_huawei & _file_exists_nokia:
+    #    print("Archivos encontrados")
+    #    return True
        
-    print("Archivo encontrado: %s    %s"%(_file_nokia,_file_exists_nokia))
-    print("Archivo encontrado: %s    %s"%(_file_huawei,_file_exists_huawei))
+    #print("Archivo encontrado: %s    %s"%(_file_nokia,_file_exists_nokia))
+    #print("Archivo encontrado: %s    %s"%(_file_huawei,_file_exists_huawei))
+    print(_file_exists_huawei)
+    print(_file_exists_nokia)
+
     return False
 
 
