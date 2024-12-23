@@ -339,12 +339,12 @@ def check_s3_file(ti=None,  **kwargs):
 
     if _file_exists_huawei & _file_exists_nokia:
         print("Archivos encontrados")
-        return PokeReturnValue(is_done=True, xcom_value="xcom_value")
+        return PokeReturnValue(is_done=True)
        
     print("Archivo encontrado: %s    %s"%(_file_nokia,_file_exists_nokia))
     print("Archivo encontrado: %s    %s"%(_file_huawei,_file_exists_huawei))
     
-    return PokeReturnValue(is_done=False, xcom_value="xcom_value")
+    return PokeReturnValue(is_done=False)
 
 
 
