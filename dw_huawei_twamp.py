@@ -15,7 +15,7 @@ from airflow.decorators import dag, task
 from airflow.utils.helpers import chain
 
 
-REMOTE_PATH = '/export/home/sysm/opt/oss/server/var/fileint/pm'
+REMOTE_PATH = '/export/home/sysm/opt/oss/server/var/fileint'
 HOURS_DELAY = 0
 
 SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
@@ -74,7 +74,7 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
 @task(
     executor_config={'LocalExecutor': {}},
 )
-def download_files(conn_id, ti=None, **kwargs):
+def download_files(ti=None, **kwargs):
 
     s3_api = boto3.resource('s3',
         aws_access_key_id = ACCESS_KEY,
@@ -90,8 +90,14 @@ def download_files(conn_id, ti=None, **kwargs):
 
     print("Creando archivo temporal: %s"%_tmp_file.name)
 
+    conn = SFTPHook(ftp_conn_id=PM_HUAWEI_SERVERS[0])
+    _remote_files = conn.list_directory(REMOTE_PATH)
+
+    print(_remote_files[:100])
+
+
     '''
-    conn = SFTPHook(ftp_conn_id=conn_id)
+    
 
     downloaded_files = 0
     downloaded_list = []
@@ -138,5 +144,6 @@ with DAG(
 ) as dag:
  
     chain(
-        get_dates()
+        get_dates(),
+        download_files()
     )
