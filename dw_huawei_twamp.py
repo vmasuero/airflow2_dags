@@ -98,7 +98,14 @@ def download_files(ti=None, **kwargs):
     _remote_files = conn.list_directory(REMOTE_PATH)
     _remote_files = [x for x in _remote_files if re.match(_regex,x)]
     
-    print(_remote_files)
+    if len(_remote_files) != 1:
+        raise AirflowFailException('Existen mas de un archivo: %s'%_remote_files)
+        
+    _remote_file = _remote_files[0]
+    
+    print("Downloading file: %s  in tmp file: %s"%(_remote_file,_tmp_file.name))
+    conn.retrieve_file(_remote_file, _tmp_file.name)
+        #s3_api.meta.client.upload_file(_path_local_tmp, BUCKET, _s3_file)
 
 
     '''
