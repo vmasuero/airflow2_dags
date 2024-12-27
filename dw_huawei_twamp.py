@@ -84,28 +84,13 @@ def download_files(conn_id, ti=None, **kwargs):
     )
     
    
-    
-    _dict_inventory = ti.xcom_pull(task_ids='check_counter_file', key='dict_inventory') 
-    _list_files_paths = ti.xcom_pull(task_ids=task_id_nm, key='list_files')
-    _date_prefix_by_hour  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_hour')
     _date_prefix_by_day  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day')
-    
-    
     _path_out_dir = ti.xcom_pull(task_ids='get_dates', key='path_out_dir')
-    _path_out_dir_tmp = _path_out_dir + "/tmp"
-    
-    print(_list_files_paths)
-    print(_date_prefix_by_hour)
-    print(_path_out_dir)
-    
-    _list_files_temp_local = {
-        x.split('/')[-1]: tempfile.NamedTemporaryFile(prefix='huawei_tmp_').name
-        for x in _list_files_paths
-    }
-    
+    _tmp_file = tempfile.NamedTemporaryFile(prefix='huawei_tmp_')
 
-    _len_list_files_paths = len(_list_files_paths)
-    print("Files in Server: %s"%_len_list_files_paths)
+    print("Creando archivo temporal: %s"%_tmp_file.name)
+
+    '''
     conn = SFTPHook(ftp_conn_id=conn_id)
 
     downloaded_files = 0
@@ -133,12 +118,12 @@ def download_files(conn_id, ti=None, **kwargs):
     conn.close_conn()
     print("Files Downloaded: %s"%downloaded_files)
     ti.xcom_push(key='downloaded_list', value=downloaded_list)
-  
+    '''
     return True
 
   
 with DAG(
-    dag_id='dw_huawei_counters_hours_3',
+    dag_id='dw_huawei_twamp',
     schedule_interval= "@daily",
     default_args={
         "depends_on_past": False,
