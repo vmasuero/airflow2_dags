@@ -23,7 +23,7 @@ BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGION)
 
 
-HUAWEI_FILES_PATH = 'Huawei/Twamps
+HUAWEI_FILES_PATH = 'Huawei/Twamps'
 
 @task(
     executor_config={'LocalExecutor': {}},
