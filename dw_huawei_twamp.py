@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+import pendulum
+import concurrent.futures
 import pandas as pd
 import os
 import re
@@ -24,6 +27,18 @@ ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGIO
 
 
 HUAWEI_FILES_PATH = 'Huawei/Twamps'
+
+
+PM_HUAWEI_SERVERS = [
+    'HUAWEI_CM_0',
+    'HUAWEI_CM_1',
+    'HUAWEI_CM_2',
+    'HUAWEI_CM_3',
+    'HUAWEI_CM_4',
+    'HUAWEI_CM_5',
+    'HUAWEI_CM_6',
+    'HUAWEI_CM_7',
+]
 
 @task(
     executor_config={'LocalExecutor': {}},
@@ -55,7 +70,73 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
 
     return True
  
+
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def download_files(conn_id, ti=None, **kwargs):
+
+    s3_api = boto3.resource('s3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT 
+    )
+    
    
+    
+    _dict_inventory = ti.xcom_pull(task_ids='check_counter_file', key='dict_inventory') 
+    _list_files_paths = ti.xcom_pull(task_ids=task_id_nm, key='list_files')
+    _date_prefix_by_hour  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_hour')
+    _date_prefix_by_day  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day')
+    
+    
+    _path_out_dir = ti.xcom_pull(task_ids='get_dates', key='path_out_dir')
+    _path_out_dir_tmp = _path_out_dir + "/tmp"
+    
+    print(_list_files_paths)
+    print(_date_prefix_by_hour)
+    print(_path_out_dir)
+    
+    _list_files_temp_local = {
+        x.split('/')[-1]: tempfile.NamedTemporaryFile(prefix='huawei_tmp_').name
+        for x in _list_files_paths
+    }
+    
+
+    _len_list_files_paths = len(_list_files_paths)
+    print("Files in Server: %s"%_len_list_files_paths)
+    conn = SFTPHook(ftp_conn_id=conn_id)
+
+    downloaded_files = 0
+    downloaded_list = []
+    for i,_path_remote in enumerate(_list_files_paths):
+        _path_local_tmp = _list_files_temp_local[_path_remote.split('/')[-1]]
+        _s3_file = "%s/%s"%(_path_out_dir,_path_remote.split('/')[-1])
+        
+        if redis_cli.exists(_s3_file):
+            continue
+
+        
+        if i%10 == 0:
+            _prct = 100*(i/_len_list_files_paths)
+            print("Downloading file: %s  to  %s:        %0.1f%%    to   S3:%s"%( _path_remote, _path_local_tmp, _prct, _s3_file))
+
+        # Downlaoding File, Upload S3 and set Redis
+        
+        conn.retrieve_file(_path_remote, _path_local_tmp)
+        s3_api.meta.client.upload_file(_path_local_tmp, BUCKET, _s3_file)
+        redis_cli.set(_s3_file, 1, ex=REDIS_EXPIRE)
+        downloaded_files += 1
+        downloaded_list.append(_path_remote)
+        
+    conn.close_conn()
+    print("Files Downloaded: %s"%downloaded_files)
+    ti.xcom_push(key='downloaded_list', value=downloaded_list)
+  
+    return True
+
+  
 with DAG(
     dag_id='dw_huawei_counters_hours_3',
     schedule_interval= "@daily",
