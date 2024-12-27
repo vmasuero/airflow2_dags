@@ -88,12 +88,13 @@ def download_files(ti=None, **kwargs):
     _date_prefix_by_day  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day')
     _path_out_dir = ti.xcom_pull(task_ids='get_dates', key='path_out_dir')
     _tmp_file = tempfile.NamedTemporaryFile(prefix='huawei_tmp_')
+    
 
     print("Creando archivo temporal: %s"%_tmp_file.name)
 
     conn = SFTPHook(ftp_conn_id=PM_HUAWEI_SERVERS[0])
     _regex = r'huawei_twamp_v01_\d+_%s\d+DST\.zip'%_date_prefix_by_day
-    print('REgex: %s'%_regex)
+    print('Regex: %s'%_regex)
     
     _remote_files = conn.list_directory(REMOTE_PATH)
     _remote_files = [x for x in _remote_files if re.match(_regex,x)]
@@ -102,12 +103,16 @@ def download_files(ti=None, **kwargs):
         raise AirflowFailException('Existen mas de un archivo: %s'%_remote_files)
         
     _remote_file = "%s/%s"%(REMOTE_PATH,_remote_files[0])
+    _remote_file_s3 = "%s/%s"%(HUAWEI_FILES_PATH,_remote_files[0])
     
     print("Downloading file: %s  in tmp file: %s"%(_remote_file,_tmp_file.name))
     conn.retrieve_file(_remote_file, _tmp_file.name)
-        #s3_api.meta.client.upload_file(_path_local_tmp, BUCKET, _s3_file)
+    
+    print("Uploading file: %s  from tmp file: %s"%(_remote_file_s3,_tmp_file.name))
+    s3_api.meta.client.upload_file(_tmp_file.name, BUCKET, _remote_file_s3)
 
-
+    conn.close_conn()
+    ti.xcom_push(key='remote_file_s3', value=_remote_file_s3)
     '''
     
 
