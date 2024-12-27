@@ -75,6 +75,7 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
     executor_config={'LocalExecutor': {}},
 )
 def download_files(ti=None, **kwargs):
+    import re
 
     s3_api = boto3.resource('s3',
         aws_access_key_id = ACCESS_KEY,
@@ -91,9 +92,13 @@ def download_files(ti=None, **kwargs):
     print("Creando archivo temporal: %s"%_tmp_file.name)
 
     conn = SFTPHook(ftp_conn_id=PM_HUAWEI_SERVERS[0])
+    _regex = r'huawei_twamp_v01_\d+_%s\d+DST\.zip'%_date_prefix_by_day
+    print('REgex: %s'%_regex)
+    
     _remote_files = conn.list_directory(REMOTE_PATH)
-
-    print(_remote_files[:100])
+    _remote_files = [x for x in _remote_files if re.match(_regex,x)]
+    
+    print(_remote_files)
 
 
     '''
