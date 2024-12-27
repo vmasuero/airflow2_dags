@@ -101,7 +101,7 @@ def download_files(ti=None, **kwargs):
     if len(_remote_files) != 1:
         raise AirflowFailException('Existen mas de un archivo: %s'%_remote_files)
         
-    _remote_file = _remote_files[0]
+    _remote_file = "%s/%s"%(REMOTE_PATH,_remote_files[0])
     
     print("Downloading file: %s  in tmp file: %s"%(_remote_file,_tmp_file.name))
     conn.retrieve_file(_remote_file, _tmp_file.name)
