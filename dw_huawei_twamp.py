@@ -135,8 +135,19 @@ def upload_clickhouse(ti=None, **kwargs):
         endpoint_url = ENDPOINT 
     )
     
+    bucket_cli = s3_api.Bucket(BUCKET)
    
     _remote_file_s3  = ti.xcom_pull(task_ids='download_files', key='remote_file_s3')
+    _date_prefix_by_day  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day')
+
+    _filter = HUAWEI_FILES_PATH + "/huawei_twamp_v01_"
+    _regex = r'.*huawei_twamp_v01_\d+_%s\d+DST.zip'%_date_prefix_by_day
+
+    
+    FILES = [x.key for x in bucket_cli.objects.filter(Prefix=_filter)  if re.match(_regex,x.key)]
+    
+    print(FILES)
+
     print("Preparing the upload of file: %s"%_remote_file_s3)
 
 
