@@ -42,6 +42,52 @@ PM_HUAWEI_SERVERS = [
     'HUAWEI_CM_7',
 ]
 
+TWAMP_COLS = [
+    'Date',
+    'Time',
+    'eNodeB Name',
+    'Sender Index',
+    'VS.BSTWAMP.MaxRttDelay(ms)',
+    'VS.BSTWAMP.MinRttDelay(ms)',
+    'VS.BSTWAMP.Rtt.Means(ms)',
+    'VS.BSTWAMP.Sender.RxPackets(packet)',
+    'VS.BSTWAMP.Sender.TxPackets(packet)'
+]
+
+TWAMP_COLS_RENAME = [
+    'Date',
+    'Time',
+    'ENodeB',
+    'Twamp_id',
+    'MaxRttDelay(ms)',
+    'MinRttDelay(ms)',
+    'Rtt.Means(ms)',
+    'RxPackets(packet)',
+    'TxPackets(packet)'
+]
+
+TWAMP_COLS_REPORT = [
+    'id',
+    'DateTime',
+    'ENodeB',
+    'Twamp_id',
+    'MaxRttDelay(ms)',
+    'MinRttDelay(ms)',
+    'Rtt.Means(ms)',
+    'RxPackets(packet)',
+    'TxPackets(packet)'
+]
+
+
+TWAMP_COLS_NUMBERS = [
+    #'Twamp_id',
+    'MaxRttDelay(ms)',
+    'MinRttDelay(ms)',
+    'Rtt.Means(ms)',
+    'RxPackets(packet)',
+    'TxPackets(packet)'
+]
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
@@ -126,7 +172,44 @@ def download_files(ti=None, **kwargs):
     executor_config={'LocalExecutor': {}},
 )
 def upload_clickhouse(ti=None, **kwargs):
-    import re
+    
+    def read_zip_twamp_s3(path:str, s3_api):
+        obj_buffer = s3_api.Object(BUCKET, path)
+
+        with BytesIO(obj_buffer.get()['Body'].read()) as buffer:
+            _df = pd.read_csv(buffer, compression='zip', skiprows=5, usecols=TWAMP_COLS)
+        
+        return _df
+        
+    def read_twamp_data(path:str, s3_api):
+
+        _data = read_zip_twamp_s3(path, s3_api)
+
+        _data = _data[TWAMP_COLS]
+        _data.columns = TWAMP_COLS_RENAME
+        print(_data.shape)
+        _data = _data[pd.notnull(_data).all(axis=1)]
+
+        
+        _data['DateTime'] = (_data['Date']+_data['Time']).str.replace('DST','')
+        _data = _data[_data['DateTime'].str.match('\d\d\d\d-\d\d-\d\d\ \d\d:\d\d')]
+
+        for _col in TWAMP_COLS_NUMBERS:
+            print(_col)
+            _data[_col] = pd.to_numeric(_data[_col], errors='coerce')
+        _data = _data[pd.notnull(_data).all(axis=1)]
+        
+        _data['Twamp_id'] = _data['Twamp_id'].astype('int8')
+        _data['MaxRttDelay(ms)'] = _data['MaxRttDelay(ms)'].astype('int32')
+        _data['MinRttDelay(ms)'] = _data['MinRttDelay(ms)'].astype('int32')
+        _data['Rtt.Means(ms)'] = _data['Rtt.Means(ms)'].astype('int32')
+        _data['RxPackets(packet)'] = _data['RxPackets(packet)'].astype('int16')
+        _data['TxPackets(packet)'] = _data['TxPackets(packet)'].astype('int16')
+
+        _data['id'] = [str(uuid.uuid4()) for x in _data.index]
+        _data = _data[TWAMP_COLS_REPORT]
+        
+        return _data
 
     s3_api = boto3.resource('s3',
         aws_access_key_id = ACCESS_KEY,
@@ -137,7 +220,6 @@ def upload_clickhouse(ti=None, **kwargs):
     
     bucket_cli = s3_api.Bucket(BUCKET)
    
-    _remote_file_s3  = ti.xcom_pull(task_ids='download_files', key='remote_file_s3')
     _date_prefix_by_day  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day')
 
     _filter = HUAWEI_FILES_PATH + "/huawei_twamp_v01_"
@@ -146,7 +228,13 @@ def upload_clickhouse(ti=None, **kwargs):
     
     FILES = [x.key for x in bucket_cli.objects.filter(Prefix=_filter)  if re.match(_regex,x.key)]
     
-    print(FILES)
+    if len(FILES) == 0:
+        raise AirflowFailException('No se encuentra el archivo %s'%_regex)
+        
+    if len(FILES) > 1:
+        raise AirflowFailException('Se encuentra mas de un archivo %s'%FILES)
+    
+    _remote_file_s3 = FILES[0]
 
     print("Preparing the upload of file: %s"%_remote_file_s3)
 
