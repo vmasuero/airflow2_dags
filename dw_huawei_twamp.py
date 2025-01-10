@@ -87,12 +87,33 @@ TWAMP_COLS_NUMBERS = [
     'TxPackets(packet)'
 ]
 
+
+CLICKHOUSE_IP = 'clickhouse-counters.clickhouse.svc.cluster.local' 
+N_SHARDS = 5
+SHARDS = [x for x in range(N_SHARDS)]
+CLICKHOUSE_IP_SHARDS = ['chi-counters-counters-%s-0.clickhouse.svc.cluster.local'%x for x in SHARDS]
+
+CLUSTER = 'counters'
+CLICKHOUSE_PORT = 8123      
+CLICKHOUSE_USERNAME = 'dev_user' 
+CLICKHOUSE_PASSWORD = 'vtrclaro1234'      
+
+DATABASE = 'TWAMP'
+TABLE='COUNTERS'
+TABLE_DIST = "%s_DIST"%TABLE
+
+SQL_INSERT_DF = '''
+INSERT INTO %s.%s VALUES
+'''%(DATABASE, TABLE_DIST)
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
 def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  **kwargs):
     #2024-01-07
     #huawei_twamp_v01_20240801124011_20241226060000DST.zip
+    
+    
     
     print("Yesteraday Date in RAW version: %s "%data_interval_start)
     _date_oper = data_interval_start-timedelta(hours=HOURS_DELAY)
@@ -171,6 +192,8 @@ def download_files(ti=None, **kwargs):
     executor_config={'LocalExecutor': {}},
 )
 def upload_clickhouse(ti=None, **kwargs):
+
+
     
     def read_zip_twamp_s3(path:str, s3_api):
         obj_buffer = s3_api.Object(BUCKET, path)
@@ -216,6 +239,13 @@ def upload_clickhouse(ti=None, **kwargs):
         endpoint_url = ENDPOINT 
     )
     
+    client_ch_cli = Client(
+        host = CLICKHOUSE_IP, 
+        database = DATABASE, 
+        user = CLICKHOUSE_USERNAME, 
+        password = CLICKHOUSE_PASSWORD
+    )
+    
     bucket_cli = s3_api.Bucket(BUCKET)
    
     _date_prefix_by_day  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day')
@@ -241,7 +271,12 @@ def upload_clickhouse(ti=None, **kwargs):
     _n_chunks = int(_twamp_data.shape[0] / 10000)
     _twamp_data['chunk'] = [randint(0,_n_chunks-1) for x in _twamp_data.index]
 
-    print(_twamp_data.sample(10))
+    print(SQL_INSERT_DF)
+    
+    for k,v in _twamp_data.groupby('chunk'):
+        print("Sending Chunk: %s"%k)
+        client_ch_cli.insert_dataframe(SQL_INSERT_DF, v.drop('chunk', axis=1), settings=dict(use_numpy=True))
+
     
     return True
   
