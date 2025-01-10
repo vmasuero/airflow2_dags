@@ -9,6 +9,7 @@ from io import StringIO,BytesIO
 import tempfile
 import clickhouse_connect
 from clickhouse_driver import Client
+from random import randint
 
 from airflow import DAG
 from airflow.providers.sftp.hooks.sftp import SFTPHook
@@ -67,7 +68,6 @@ TWAMP_COLS_RENAME = [
 ]
 
 TWAMP_COLS_REPORT = [
-    'id',
     'DateTime',
     'ENodeB',
     'Twamp_id',
@@ -80,7 +80,6 @@ TWAMP_COLS_REPORT = [
 
 
 TWAMP_COLS_NUMBERS = [
-    #'Twamp_id',
     'MaxRttDelay(ms)',
     'MinRttDelay(ms)',
     'Rtt.Means(ms)',
@@ -206,7 +205,6 @@ def upload_clickhouse(ti=None, **kwargs):
         _data['RxPackets(packet)'] = _data['RxPackets(packet)'].astype('int16')
         _data['TxPackets(packet)'] = _data['TxPackets(packet)'].astype('int16')
 
-        _data['id'] = [str(uuid.uuid4()) for x in _data.index]
         _data = _data[TWAMP_COLS_REPORT]
         
         return _data
@@ -237,8 +235,14 @@ def upload_clickhouse(ti=None, **kwargs):
     _remote_file_s3 = FILES[0]
 
     print("Preparing the upload of file: %s"%_remote_file_s3)
+    
+    _twamp_data = read_twamp_data(_remote_file_s3, s3_api)
 
+    _n_chunks = int(_twamp_data.shape[0] / 10000)
+    _twamp_data['chunk'] = [randint(0,_n_chunks-1) for x in _twamp_data.index]
 
+    print(_twamp_data.sample(10))
+    
     return True
   
 with DAG(
