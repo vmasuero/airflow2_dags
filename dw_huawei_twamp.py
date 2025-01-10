@@ -7,6 +7,8 @@ import re
 import boto3
 from io import StringIO,BytesIO
 import tempfile
+import clickhouse_connect
+from clickhouse_driver import Client
 
 from airflow import DAG
 from airflow.providers.sftp.hooks.sftp import SFTPHook
@@ -117,37 +119,28 @@ def download_files(ti=None, **kwargs):
 
     conn.close_conn()
     ti.xcom_push(key='remote_file_s3', value=_remote_file_s3)
-    '''
     
-
-    downloaded_files = 0
-    downloaded_list = []
-    for i,_path_remote in enumerate(_list_files_paths):
-        _path_local_tmp = _list_files_temp_local[_path_remote.split('/')[-1]]
-        _s3_file = "%s/%s"%(_path_out_dir,_path_remote.split('/')[-1])
-        
-        if redis_cli.exists(_s3_file):
-            continue
-
-        
-        if i%10 == 0:
-            _prct = 100*(i/_len_list_files_paths)
-            print("Downloading file: %s  to  %s:        %0.1f%%    to   S3:%s"%( _path_remote, _path_local_tmp, _prct, _s3_file))
-
-        # Downlaoding File, Upload S3 and set Redis
-        
-        conn.retrieve_file(_path_remote, _path_local_tmp)
-        s3_api.meta.client.upload_file(_path_local_tmp, BUCKET, _s3_file)
-        redis_cli.set(_s3_file, 1, ex=REDIS_EXPIRE)
-        downloaded_files += 1
-        downloaded_list.append(_path_remote)
-        
-    conn.close_conn()
-    print("Files Downloaded: %s"%downloaded_files)
-    ti.xcom_push(key='downloaded_list', value=downloaded_list)
-    '''
     return True
 
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def upload_clickhouse(ti=None, **kwargs):
+    import re
+
+    s3_api = boto3.resource('s3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT 
+    )
+    
+   
+    _remote_file_s3  = ti.xcom_pull(task_ids='download_files', key='remote_file_s3')
+    print("Preparing the upload of file: %s"%_remote_file_s3)
+
+
+    return True
   
 with DAG(
     dag_id='dw_huawei_twamp',
@@ -166,5 +159,6 @@ with DAG(
  
     chain(
         get_dates(),
-        download_files()
+        download_files(),
+        upload_clickhouse()
     )
