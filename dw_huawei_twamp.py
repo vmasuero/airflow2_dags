@@ -99,6 +99,10 @@ def download_files(ti=None, **kwargs):
     _remote_files = conn.list_directory(REMOTE_PATH)
     _remote_files = [x for x in _remote_files if re.match(_regex,x)]
     
+    if len(_remote_files) == 0:
+        raise AirflowFailException('No existen archivo en directorio remoto')
+       
+    
     if len(_remote_files) != 1:
         raise AirflowFailException('Existen mas de un archivo: %s'%_remote_files)
         
