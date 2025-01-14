@@ -230,6 +230,15 @@ def upload_clickhouse(ti=None, **kwargs):
 
         _data = _data[TWAMP_COLS_REPORT]
         
+        # PATH , se eliminan los parentesis de los nombres de las columnas
+        _data = _data.rename(columns={
+            'MaxRttDelay(ms)':'MaxRttDelay',
+            'MinRttDelay(ms)':'MinRttDelay',
+            'Rtt.Means(ms)':'RttMeans',
+            'RxPackets(packet)':'RxPackets',
+            'TxPackets(packet)':'TxPackets',
+        })
+        
         return _data
 
     s3_api = boto3.resource('s3',
