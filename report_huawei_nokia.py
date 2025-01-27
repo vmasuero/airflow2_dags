@@ -160,6 +160,7 @@ def cooncat_files( ti=None,  **kwargs):
     _file_out_parquet = ti.xcom_pull(task_ids='get_dates', key='file_out_parquet')
     _file_out_xlsx = ti.xcom_pull(task_ids='get_dates', key='file_out_xlsx')
     _prefix_date = ti.xcom_pull(task_ids='get_dates', key='prefix_date')
+    _prefix_date_date = datetime.strptime(_prefix_date, '%Y-%m-%d')
 
     _s3_api = boto3.resource('s3',
         aws_access_key_id = ACCESS_KEY,
