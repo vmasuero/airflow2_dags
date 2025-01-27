@@ -308,6 +308,7 @@ def cooncat_files( ti=None,  **kwargs):
         'TOTAL']
     ]
     
+    _report.PERIOD_START_TIME = _report.PERIOD_START_TIME.astype(str)
         
     print("Uploading report to file XLS: %s"%_file_out_xlsx)
     save_excel_s3(_s3_api, _report[_report.TOTAL > 9], BUCKET, _file_out_xlsx)
