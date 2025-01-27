@@ -26,7 +26,7 @@ DIR_NOKIA = 'Nokia/Reports_60min'
 DIR_HUAWEI = 'Huawei/Reports_60min'
 DIR_OUT = 'Acceso_Movil/Reports_60min'
 
-VERSION = "5.0"
+VERSION = "7.0"
 
 def save_csv_s3(s3,data, bucket, path):
         
@@ -189,6 +189,9 @@ def cooncat_files( ti=None,  **kwargs):
     REPORT = REPORT[pd.notnull(REPORT['CELL'])]
     
     REPORT = REPORT.reset_index(drop=True)
+    REPORT = REPORT[REPORT.PERIOD_START_TIME.dt.day == _prefix_date_date.day]
+    REPORT = REPORT[REPORT.PERIOD_START_TIME.dt.month == _prefix_date_date.month]
+    REPORT = REPORT[REPORT.PERIOD_START_TIME.dt.year == _prefix_date_date.year]
     
     
     ## CREATING REPORT
@@ -228,6 +231,7 @@ def cooncat_files( ti=None,  **kwargs):
         'CCUSERS':'max'
     })
     _report_cell['TOTAL'] = 10
+    _report_cell['PERIOD_START_TIME'] = _prefix_date
     _report_list.append(_report_cell)
 
     REPORT_AGG_SITE_0 = {
@@ -251,6 +255,7 @@ def cooncat_files( ti=None,  **kwargs):
     _report_site = _report_site.groupby(level=0, group_keys=False).agg(REPORT_AGG_SITE_1)
     _report_site.reset_index(inplace=True)
     _report_site['TOTAL'] = 11
+    _report_site['PERIOD_START_TIME'] = _prefix_date
     _report_list.append(_report_site)
 
     print()
@@ -259,6 +264,7 @@ def cooncat_files( ti=None,  **kwargs):
     _report_site_tech = _report_site_tech.groupby(level=[0,2], group_keys=False).agg(REPORT_AGG_SITE_1)
     _report_site_tech.reset_index(inplace=True)
     _report_site_tech['TOTAL'] = 12
+    _report_site_tech['PERIOD_START_TIME'] = _prefix_date
     _report_list.append(_report_site_tech)
 
     REPORT_AGG_SITE_2 = {
@@ -274,6 +280,7 @@ def cooncat_files( ti=None,  **kwargs):
     _report_all_tech.reset_index(inplace=True)
     _report_all_tech = _report_all_tech.drop('PERIOD_START_TIME', axis=1)
     _report_all_tech['TOTAL'] = 13
+    _report_all_tech['PERIOD_START_TIME'] = _prefix_date
     _report_list.append(_report_all_tech)
 
 
@@ -284,6 +291,7 @@ def cooncat_files( ti=None,  **kwargs):
     _report_all.reset_index(inplace=True)
     _report_all = _report_all.drop('PERIOD_START_TIME', axis=1)
     _report_all['TOTAL'] = 14
+    _report_all['PERIOD_START_TIME'] = _prefix_date
     _report_list.append(_report_all)
 
     _report = pd.concat(_report_list)
@@ -299,7 +307,6 @@ def cooncat_files( ti=None,  **kwargs):
         'TOTAL']
     ]
     
-    _report['PERIOD_START_TIME'] = _prefix_date
         
     print("Uploading report to file XLS: %s"%_file_out_xlsx)
     save_excel_s3(_s3_api, _report[_report.TOTAL > 9], BUCKET, _file_out_xlsx)
