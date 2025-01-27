@@ -116,6 +116,7 @@ def get_dates(ds=None, data_interval_start=None, data_interval_end=None, ti=None
 
 @task(
     executor_config={'LocalExecutor': {}},
+    pool='SERIAL'
 )
 def check_files( ti=None,  **kwargs):
     
