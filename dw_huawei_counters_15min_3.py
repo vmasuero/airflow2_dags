@@ -147,6 +147,8 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
     ti.xcom_push(key='date_prefix_by_hour', value=_date_prefix_by_hour)
     ti.xcom_push(key='date_prefix_by_day', value=_date_prefix_by_day)
     ti.xcom_push(key='path_out_dir', value=_path_out_dir)
+    ti.xcom_push(key='HUAWEI_COUNTER_INVENTORY_S3', value=HUAWEI_COUNTER_INVENTORY_S3)
+    
     
 
     return True
@@ -552,6 +554,15 @@ with DAG(
     tags=['development', 'huawei']
 ) as dag:
 
+    with TaskGroup(group_id='dw_tasks') as dw_tasks:
+
+        for i,server_conn in enumerate(PM_HUAWEI_SERVERS[:]):
+            _task_id_get_list_files = ('dw_tasks.get_list_files__'+str(i)).replace('__0','')
+
+            chain(
+                get_list_files(conn_id=server_conn, remote_path=REMOTE_PATH),
+                #download_files(conn_id=server_conn, task_id_nm=_task_id_get_list_files)
+            )
         
     chain(
         get_dates(),
