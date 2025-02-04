@@ -1,5 +1,4 @@
 from airflow import DAG
-#from airflow.providers.apache.kafka.hooks.kafka import KafkaHook
 from airflow.providers.apache.kafka.operators.produce import ProduceToTopicOperator
 from airflow.providers.apache.kafka.operators.consume import ConsumeFromTopicOperator
 
@@ -7,21 +6,31 @@ from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
 
-@task(
-    executor_config={'LocalExecutor': {}},
-)
-def arieso_stream_lte():
-    kafka_hook = KafkaHook(kafka_config_id="ARIESO_KAFKA")
-    messages = kafka_hook.consume(topics=["Analytics"], num_messages=2, timeout=10)
+KAFKA_TOPIC = 'Analytics'
+
+def get_stream_arieso(message):
+    "Takes in consumed messages and prints its contents to the logs."
+
+    key = json.loads(message.key())
+    message_content = json.loads(message.value())
+    pet_name = message_content["pet_name"]
+    pet_mood_post_treat = message_content["pet_mood_post_treat"]
     
-    for msg in messages:
-        print(f"Mensaje recibido: {msg.value}")
+    print(
+        f"Message #{key}: Hello {name}, your pet {pet_name} has consumed another treat and is now {pet_mood_post_treat}!"
+    )
+    
+    return True
 
 
+def get_stream_arieso_1(message):
+    
+    print(message)
+
+    return True
 
 with DAG(
     dag_id='stream_arieso',
-    #schedule_interval= "@daily",
     default_args={
         "depends_on_past": False,
         'owner': 'Vmasuero'
@@ -32,5 +41,16 @@ with DAG(
     max_active_runs=1
     ) as dag:
     
-        pass
-        #arieso_stream_lte()
+        t_get_stream_arieso = ConsumeFromTopicOperator(
+            task_id="get_stream_arieso_1",
+            kafka_config_id="ARIESO_KAFKA",
+            topics=[KAFKA_TOPIC],
+            apply_function=consume_function,
+        apply_function_kwargs={},
+        poll_timeout=20,
+        max_messages=20,
+        max_batch_size=2,
+        )
+        
+        
+        t_get_stream_arieso
