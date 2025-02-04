@@ -555,8 +555,8 @@ with DAG(
         
     chain(
         get_dates(),
-        #check_counter_file(),
-        #check_redis(),
+        check_counter_file(),
+        check_redis(),
         #dw_tasks,
         #create_report_dairy()
     )
