@@ -45,7 +45,7 @@ with DAG(
             task_id="get_stream_arieso_1",
             kafka_config_id="ARIESO_KAFKA",
             topics=[KAFKA_TOPIC],
-            apply_function=consume_function,
+            apply_function=get_stream_arieso_1,
         apply_function_kwargs={},
         poll_timeout=20,
         max_messages=20,
