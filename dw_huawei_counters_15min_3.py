@@ -552,18 +552,7 @@ with DAG(
     tags=['development', 'huawei']
 ) as dag:
 
-'''
-    with TaskGroup(group_id='dw_tasks') as dw_tasks:
-
-        for i,server_conn in enumerate(PM_HUAWEI_SERVERS[:]):
-            _task_id_get_list_files = ('dw_tasks.get_list_files__'+str(i)).replace('__0','')
-
-            chain(
-                get_list_files(conn_id=server_conn, remote_path=REMOTE_PATH),
-                download_files(conn_id=server_conn, task_id_nm=_task_id_get_list_files)
-            )
-
-   '''           
+        
     chain(
         get_dates(),
         #check_counter_file(),
