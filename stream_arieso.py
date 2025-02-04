@@ -1,5 +1,8 @@
 from airflow import DAG
-from airflow.providers.apache.kafka.hooks.kafka import KafkaHook
+#from airflow.providers.apache.kafka.hooks.kafka import KafkaHook
+from airflow.providers.apache.kafka.operators.produce import ProduceToTopicOperator
+from airflow.providers.apache.kafka.operators.consume import ConsumeFromTopicOperator
+
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
@@ -31,4 +34,5 @@ with DAG(
     max_active_runs=1
     ) as dag:
     
-        arieso_stream_lte()
+        pass
+        #arieso_stream_lte()
