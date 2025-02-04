@@ -24,9 +24,7 @@ with DAG(
     #schedule_interval= "@daily",
     default_args={
         "depends_on_past": False,
-        'owner': 'Vmasuero',
-        "retries": 1,
-        "retry_delay": timedelta(minutes=1),
+        'owner': 'Vmasuero'
     },
     start_date= days_ago(1),
     catchup=True,
