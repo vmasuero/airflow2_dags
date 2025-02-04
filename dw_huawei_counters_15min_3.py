@@ -561,7 +561,7 @@ with DAG(
 
             chain(
                 get_list_files(conn_id=server_conn, remote_path=REMOTE_PATH),
-                #download_files(conn_id=server_conn, task_id_nm=_task_id_get_list_files)
+                download_files(conn_id=server_conn, task_id_nm=_task_id_get_list_files)
             )
         
     chain(
