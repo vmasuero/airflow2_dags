@@ -509,6 +509,7 @@ def create_report_dairy(ti=None, **kwargs):
                 _TO_APPEND.append(_to_ap)
                 
     DATA_COUNTERS = pd.concat(_TO_APPEND)
+    display(DATA_COUNTERS.sample(5))
 
     DATA_COUNTERS = DATA_COUNTERS.loc[pd.IndexSlice[:,:,'4g',:,:]]
     DATA_COUNTERS.groupby(level=['SITE', 'CELL', 'TECH', 'PERIOD_START_TIME', 'ENODEID']).max()
