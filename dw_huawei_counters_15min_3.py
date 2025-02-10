@@ -492,7 +492,6 @@ def create_report_dairy(ti=None, **kwargs):
     _path_file_s3 = '/'.join( _path_file_s3.split('/')[:3])
     print("Preparing report to %s"%_path_file_s3)
     
-    return True
     
     print('Reading and Concat Files') 
     DATA_COUNTERS = pd.DataFrame()
