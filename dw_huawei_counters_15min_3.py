@@ -311,15 +311,11 @@ def create_report_dairy(ti=None, **kwargs):
         {'table_id': 1526726664, 'Id':1526729022, 'Counter':'L.Thrp.Time.DL.RmvLastTTI.QCI.7'},   #1526726664
         {'table_id': 1526726664, 'Id':1526729021, 'Counter':'L.Thrp.Time.DL.RmvLastTTI.QCI.6'},   #1526726664
 
-
-        
         {'table_id': 1526726664, 'Id':1526729014, 'Counter':'L.Thrp.bits.DL.LastTTI.QCI.9'},  #1526726664
         {'table_id': 1526726664, 'Id':1526729013, 'Counter':'L.Thrp.bits.DL.LastTTI.QCI.8'},  #1526726664
         {'table_id': 1526726664, 'Id':1526729012, 'Counter':'L.Thrp.bits.DL.LastTTI.QCI.7'},  #1526726664
         {'table_id': 1526726664, 'Id':1526729011, 'Counter':'L.Thrp.bits.DL.LastTTI.QCI.6'},  #1526726664
 
-
-        
         {'table_id': 1526726664, 'Id':1526726827, 'Counter':'L.Thrp.bits.DL.QCI.9'},   #1526726664
         {'table_id': 1526726664, 'Id':1526726824, 'Counter':'L.Thrp.bits.DL.QCI.8'},   #1526726664
         {'table_id': 1526726664, 'Id':1526726821, 'Counter':'L.Thrp.bits.DL.QCI.7'},   #1526726664
@@ -330,8 +326,6 @@ def create_report_dairy(ti=None, **kwargs):
         {'table_id': 1526726664, 'Id':1526729005, 'Counter':'L.Thrp.bits.DL.LastTTI'},   #1526726664
         {'table_id': 1526726664, 'Id':1526729015, 'Counter':'L.Thrp.Time.DL.RmvLastTTI'},   #1526726664
 
-
-        
         {'table_id': 1526726705, 'Id':1526727379, 'Counter':'L.Traffic.User.Max'},  #1526726705
         {'table_id': 1526726705, 'Id':1526727378, 'Counter':'L.Traffic.User.Avg'},  #1526726705
         
@@ -500,24 +494,47 @@ def create_report_dairy(ti=None, **kwargs):
     
     return True
     
-    print('Reading and Concat Files')  
-    DATA_COUNTERS = pd.DataFrame()        
+    print('Reading and Concat Files') 
+    DATA_COUNTERS = pd.DataFrame()
+    
     with Client(CLUSTER_DASK_IP) as DASK_CLIENT:
-
-        _to_joins = []
+        
+        _TO_APPEND = []
         for k,v in FILES_DF.groupby('table'):
             futures = DASK_CLIENT.map(proc_csv, v.path)
-            _to_append = DASK_CLIENT.submit(pd.concat, futures).result()
-            _to_append = _to_append[ [x for x in _to_append.columns if x in ID_NAMES] ]
-            _to_joins.append(_to_append)
-       
-    print('Joining Files')  
-    DATA_COUNTERS = pd.DataFrame()
-    for _to_join in _to_joins:
-        DATA_COUNTERS = _to_join if DATA_COUNTERS.empty else DATA_COUNTERS.join(_to_join)
 
-    DATA_COUNTERS = DATA_COUNTERS[COLS_NAMES.keys()]
-    DATA_COUNTERS.columns = [COLS_NAMES[x] for x in COLS_NAMES.keys()]   
+            for _f in as_completed(futures):
+                _to_ap = _f.result()
+                _to_ap = _to_ap[ [x for x in _to_ap.columns if x in ID_NAMES] ]
+                 
+                _TO_APPEND.append(_to_ap)
+                
+    DATA_COUNTERS = pd.concat(_TO_APPEND)
+
+    DATA_COUNTERS = DATA_COUNTERS.loc[pd.IndexSlice[:,:,'4g',:,:]]
+    DATA_COUNTERS.groupby(level=['SITE', 'CELL', 'TECH', 'PERIOD_START_TIME', 'ENODEID']).max()
+    DATA_COUNTERS = DATA_COUNTERS.rename(columns=COLS_NAMES)  
+
+    display(DATA_COUNTERS.sample(5))
+    
+    return True
+    #DATA_COUNTERS = pd.DataFrame()        
+    #with Client(CLUSTER_DASK_IP) as DASK_CLIENT:
+
+    #    _to_joins = []
+    #    for k,v in FILES_DF.groupby('table'):
+    #        futures = DASK_CLIENT.map(proc_csv, v.path)
+    #        _to_append = DASK_CLIENT.submit(pd.concat, futures).result()
+    #        _to_append = _to_append[ [x for x in _to_append.columns if x in ID_NAMES] ]
+    #        _to_joins.append(_to_append)
+       
+    #print('Joining Files')  
+    #DATA_COUNTERS = pd.DataFrame()
+    #for _to_join in _to_joins:
+    #    DATA_COUNTERS = _to_join if DATA_COUNTERS.empty else DATA_COUNTERS.join(_to_join)
+
+    #DATA_COUNTERS = DATA_COUNTERS[COLS_NAMES.keys()]
+    #DATA_COUNTERS.columns = [COLS_NAMES[x] for x in COLS_NAMES.keys()]   
 
 
     #PROCESSING 4G
