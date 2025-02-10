@@ -181,8 +181,6 @@ def get_list_files(remote_path, conn_id, ti=None, **kwargs):
     _tables_ids  = ti.xcom_pull(task_ids='check_counter_file', key='tables_ids')
     print("Table Ids:%s "%_tables_ids)
        
-    ## SAMPLING FILES DE 60 min
-    #_regex = r'.*_%s_%s[\d]{4}_%s[\d]{4}\.csv\.gz$'%(SAMPLING,_date_prefix_by_day,_date_prefix_by_day)
     _regex = r'.*HOST\d+_pmresult_\d+_%s_\d{12}_\d{12}\.csv\.gz'%(SAMPLING)
     
  
@@ -478,8 +476,6 @@ def create_report_dairy(ti=None, **kwargs):
     COLS_NAMES = {x['Id']:x['Counter'] for x in COLS_RAWDATA}
     ID_NAMES = pd.DataFrame(COLS_RAWDATA).Id.unique()
     
-         
-    
     FILES_ALL = [x.key for x in s3_api.Bucket(BUCKET).objects.filter(Prefix=_path_out_dir)]
 
     FILES = []
@@ -502,7 +498,8 @@ def create_report_dairy(ti=None, **kwargs):
     _path_file_s3 = '/'.join( _path_file_s3.split('/')[:3])
     print("Preparing report to %s"%_path_file_s3)
     
-   
+    return True
+    
     print('Reading and Concat Files')  
     DATA_COUNTERS = pd.DataFrame()        
     with Client(CLUSTER_DASK_IP) as DASK_CLIENT:
@@ -569,5 +566,5 @@ with DAG(
         check_counter_file(),
         check_redis(),
         dw_tasks,
-        #create_report_dairy()
+        create_report_dairy()
     )
