@@ -7,6 +7,9 @@ import re
 import boto3
 from io import StringIO,BytesIO
 import tempfile
+import time
+from random import randint
+
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -59,7 +62,7 @@ CLUSTER_DASK_IP = 'dask-cluster-airflow-scheduler.dask-cluster:8786'
 REDIS_URL = 'redis-huawei-master.airflow2'
 REDIS_EXPIRE = 60*60*24*2  #2 dias
 
-VERSION = 5
+VERSION = 9
 
 def upload_parquet_s3(data:pd.DataFrame, filename:str, s3_api):
     _parquet_buffer = BytesIO()
@@ -289,9 +292,6 @@ def create_report_dairy(ti=None, **kwargs):
     _path_out_dir = ti.xcom_pull(task_ids='get_dates', key='path_out_dir') 
     _date_prefix_by_day = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day') 
 
-    
-    
-    
     if _hour_oper < 23:
         print('Wating for end of the day')
         raise AirflowSkipException('Wating for final of the day')
@@ -344,6 +344,9 @@ def create_report_dairy(ti=None, **kwargs):
         #'VS.HSDPA.UE.Mean.Cell':
     ]
     
+    ## SELECCIONAR SOLO LAS TABLAS DE BW
+    SELECTED_TABLES = [1526726664,1526726705]
+
     def proc_csv(path:str):
 
 
@@ -391,8 +394,6 @@ def create_report_dairy(ti=None, **kwargs):
             _rand = randint(1000,10000)
             return ['unknown_%s'%_rand,'unknown_%s'%_rand,'unknown_%s'%_rand]
 
-        #print("##################DW %s"%path)
-        #print("##################DW %s"%(URL_PRESHARED + path) )
         try:
             _data = pd.read_csv(URL_PRESHARED + path, sep=',', compression='gzip', low_memory=False)
         except EOFError:
@@ -431,33 +432,6 @@ def create_report_dairy(ti=None, **kwargs):
         _data = _data.groupby(level=['SITE','CELL','TECH','PERIOD_START_TIME','ENODEID'], as_index=True).max()
         
         return _data
-    
-    
-    def proc_cell_4g(data:pd.DataFrame, remove_outliners=False):
-
-        def remove_outliners_from_serie(serie:pd.Series):
-
-            _serie = serie.infer_objects(copy=False)
-            _q_hi  = _serie.quantile(0.90)
-            
-            _serie[(_serie > _q_hi)] = pd.NA
-            
-            return _serie
-
-        _data = data.copy()
-
-        _data['VOL'] = (_data['L.Thrp.bits.DL'] ) / 1000000   #Mbits
-        _data['THRPUT'] = _data['VOL'] / (SAMPLING*60)   #Mbits/s  # 15 minutes
-        _data['CCUSERS'] = _data['L.Traffic.User.Max']  # #concurrent users
-        _data['USER_THRPUT'] = _data.apply(lambda x: x['THRPUT'] / x['CCUSERS'] if x['CCUSERS'] > 0 else pd.NA, axis=1) #Mbits/s
-        _data  = _data[['VOL','THRPUT','CCUSERS','USER_THRPUT']]
-
-        if remove_outliners:
-            _data['THRPUT' ]= _data.groupby(level=['SITE','CELL'], as_index=False)['THRPUT'].apply(remove_outliners_from_serie).droplevel(0)
-
-        _data = _data.reset_index()[['SITE','CELL','TECH','ENODEID','PERIOD_START_TIME','VOL', 'THRPUT', 'CCUSERS', 'USER_THRPUT']]
-
-        return _data
         
     s3_api = boto3.resource('s3',
         aws_access_key_id = ACCESS_KEY,
@@ -473,7 +447,6 @@ def create_report_dairy(ti=None, **kwargs):
     FILES_ALL = [x.key for x in s3_api.Bucket(BUCKET).objects.filter(Prefix=_path_out_dir)]
 
     FILES = []
-    ### ESTE FILTRO!
     for table in TABLES_NAMES:
         FILES = FILES + [x for x in FILES_ALL if re.match(r'.*_%s_%s_.*\.csv\.gz$'%(table,SAMPLING),x)]
 
@@ -484,6 +457,10 @@ def create_report_dairy(ti=None, **kwargs):
     FILES_DF['table'] = FILES_DF.path.str.split('_').apply(lambda x: x[3] )
     FILES_DF['host'] = FILES_DF.path.str.split('_').apply(lambda x: x[1].split('/')[-1] )
     
+    ## JUST BW COUNTERS
+    FILES_DF = FILES_DF[ FILES_DF['table'].isin(SELECTED_TABLES) ]
+    
+    
     print(FILES_DF.sample(10))
     print("######################################")
     print("Retreiving files from %s"%_path_out_dir)
@@ -492,56 +469,41 @@ def create_report_dairy(ti=None, **kwargs):
     _path_file_s3 = '/'.join( _path_file_s3.split('/')[:3])
     print("Preparing report to %s"%_path_file_s3)
     
-    
     print('Reading and Concat Files') 
     DATA_COUNTERS = pd.DataFrame()
-    
     with Client(CLUSTER_DASK_IP) as DASK_CLIENT:
         
         _TO_APPEND = []
-        for k,v in FILES_DF.groupby('table'):
-            futures = DASK_CLIENT.map(proc_csv, v.path)
+        for k,files in FILES_DF.groupby('table'):
+            print("Table: %s"%k)
+
+            futures = []
+            for k1,file in files.iterrows():
+                futures.append( DASK_CLIENT.submit(proc_csv, file.path) )
+                if randint(0,7) == 5:
+                    time.sleep(.1)
 
             for _f in as_completed(futures):
                 _to_ap = _f.result()
                 _to_ap = _to_ap[ [x for x in _to_ap.columns if x in ID_NAMES] ]
-                 
-                _TO_APPEND.append(_to_ap)
-                
-    DATA_COUNTERS = pd.concat(_TO_APPEND)
-    display(DATA_COUNTERS.sample(5))
 
-    DATA_COUNTERS = DATA_COUNTERS.loc[pd.IndexSlice[:,:,'4g',:,:]]
-    DATA_COUNTERS.groupby(level=['SITE', 'CELL', 'TECH', 'PERIOD_START_TIME', 'ENODEID']).max()
+                _TO_APPEND.append(_to_ap)
+                del _f 
+
+    DATA_COUNTERS = pd.concat(_TO_APPEND)
+    DATA_COUNTERS = DATA_COUNTERS[ DATA_COUNTERS.index.get_level_values('TECH') == '4g']
+    DATA_COUNTERS = DATA_COUNTERS.groupby(level=['SITE', 'CELL', 'TECH', 'PERIOD_START_TIME', 'ENODEID']).max()
     DATA_COUNTERS = DATA_COUNTERS.rename(columns=COLS_NAMES)  
 
-    display(DATA_COUNTERS.sample(5))
-    
-    return True
-    #DATA_COUNTERS = pd.DataFrame()        
-    #with Client(CLUSTER_DASK_IP) as DASK_CLIENT:
-
-    #    _to_joins = []
-    #    for k,v in FILES_DF.groupby('table'):
-    #        futures = DASK_CLIENT.map(proc_csv, v.path)
-    #        _to_append = DASK_CLIENT.submit(pd.concat, futures).result()
-    #        _to_append = _to_append[ [x for x in _to_append.columns if x in ID_NAMES] ]
-    #        _to_joins.append(_to_append)
-       
-    #print('Joining Files')  
-    #DATA_COUNTERS = pd.DataFrame()
-    #for _to_join in _to_joins:
-    #    DATA_COUNTERS = _to_join if DATA_COUNTERS.empty else DATA_COUNTERS.join(_to_join)
-
-    #DATA_COUNTERS = DATA_COUNTERS[COLS_NAMES.keys()]
-    #DATA_COUNTERS.columns = [COLS_NAMES[x] for x in COLS_NAMES.keys()]   
-
-
-    #PROCESSING 4G
-    print('Processig 4G Files')  
-    #DATA_COUNTERS_4G = DATA_COUNTERS.loc[DATA_COUNTERS.index.get_level_values('TECH').str.lower() == '4g',:].copy()
+    print('Making 4G Kpis')
     DATA_COUNTERS_4G = DATA_COUNTERS.copy()
-    DATA_COUNTERS_4G = DATA_COUNTERS_4G.groupby(level='CELL', as_index=False).apply(proc_cell_4g)
+    DATA_COUNTERS_4G['VOL'] = (DATA_COUNTERS_4G['L.Thrp.bits.DL'] ) / 1000000   #Mbits
+    DATA_COUNTERS_4G['THRPUT'] = DATA_COUNTERS_4G['VOL'] / (SAMPLING*60)   #Mbits/s  # 15 minutes
+    DATA_COUNTERS_4G['CCUSERS'] = pd.to_numeric(DATA_COUNTERS_4G['L.Traffic.User.Max'], errors='coerce').fillna(0)   # #concurrent users
+    DATA_COUNTERS_4G['USER_THRPUT'] = DATA_COUNTERS_4G.apply(lambda x: x['THRPUT'] / x['CCUSERS'] if x['CCUSERS'] > 0 else pd.NA, axis=1) #Mbits/s
+    DATA_COUNTERS_4G  = DATA_COUNTERS_4G[['VOL','THRPUT','CCUSERS','USER_THRPUT']]
+    DATA_COUNTERS_4G = DATA_COUNTERS_4G.reset_index()[['SITE','CELL','TECH','ENODEID','PERIOD_START_TIME','VOL', 'THRPUT', 'CCUSERS', 'USER_THRPUT']]
+
          
     _report_output = "%s/REPORT_HUAWEI_%s.parquet"%(
         _path_file_s3,
