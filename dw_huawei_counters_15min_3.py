@@ -444,6 +444,7 @@ def create_report_dairy(ti=None, **kwargs):
     COLS_NAMES = {x['Id']:x['Counter'] for x in COLS_RAWDATA}
     ID_NAMES = pd.DataFrame(COLS_RAWDATA).Id.unique()
     
+    print('Buscado informacion en directorio: %s'%_path_out_dir)
     FILES_ALL = [x.key for x in s3_api.Bucket(BUCKET).objects.filter(Prefix=_path_out_dir)]
 
     FILES = []
@@ -454,7 +455,7 @@ def create_report_dairy(ti=None, **kwargs):
     FILES_DF = pd.DataFrame(FILES, columns=['path'])
     FILES_DF['start_date'] = FILES_DF.path.str.split('_').apply(lambda x: pd.to_datetime(x[5], format='%Y%m%d%H%M'))
     FILES_DF['end_date'] = FILES_DF.path.str.split('_').apply(lambda x: pd.to_datetime(x[6].split('.')[0], format='%Y%m%d%H%M'))
-    FILES_DF['table'] = FILES_DF.path.str.split('_').apply(lambda x: x[3] )
+    FILES_DF['table'] = FILES_DF.path.str.split('_').apply(lambda x: x[3] ).astype(int)
     FILES_DF['host'] = FILES_DF.path.str.split('_').apply(lambda x: x[1].split('/')[-1] )
     
     ## JUST BW COUNTERS
