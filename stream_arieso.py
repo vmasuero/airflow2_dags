@@ -18,8 +18,7 @@ KAFKA_TOPIC = Variable.get('KAFKA_TOPIC')#'Analytics'
     executor_config={'LocalExecutor': {}},
 )
 def initialization(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  **kwargs):
-    #2024-01-07
-    #huawei_twamp_v01_20240801124011_20241226060000DST.zip
+
     
     print(KAFKA_TOPIC)
  
@@ -72,4 +71,4 @@ with DAG(
         )
         
         
-        initialization >> t_get_stream_arieso
+        initialization() >> t_get_stream_arieso
