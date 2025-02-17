@@ -29,7 +29,8 @@ def get_stream_arieso(message):
 
 def get_stream_arieso_1(message):
     
-    print(message)
+
+    print(f'Recibido: {message.value().decode("utf-8")}')
 
     return True
 
