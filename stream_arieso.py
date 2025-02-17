@@ -11,7 +11,21 @@ from airflow.models import Variable
 KAFKA_TOPIC = Variable.get('KAFKA_TOPIC')#'Analytics'
 
 
-print(KAFKA_TOPIC)
+
+
+
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def initialization(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  **kwargs):
+    #2024-01-07
+    #huawei_twamp_v01_20240801124011_20241226060000DST.zip
+    
+    print(KAFKA_TOPIC)
+ 
+    
+    return True
+    
 def get_stream_arieso(message):
     "Takes in consumed messages and prints its contents to the logs."
 
@@ -58,4 +72,4 @@ with DAG(
         )
         
         
-        t_get_stream_arieso
+        initialization >> t_get_stream_arieso
