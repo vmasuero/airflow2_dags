@@ -5,9 +5,13 @@ from airflow.providers.apache.kafka.operators.consume import ConsumeFromTopicOpe
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
+from airflow.models import Variable
 
-KAFKA_TOPIC = 'Analytics'
 
+KAFKA_TOPIC = Variable.get('KAFKA_TOPIC')#'Analytics'
+
+
+print(KAFKA_TOPIC)
 def get_stream_arieso(message):
     "Takes in consumed messages and prints its contents to the logs."
 
