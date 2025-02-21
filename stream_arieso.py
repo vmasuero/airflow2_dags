@@ -7,6 +7,8 @@ from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
 from airflow.models import Variable
 
+from airflow.utils.dates import days_ago
+
 import sys
 sys.path.append('/usr/lib/ViaviAnalytics')
 
@@ -57,7 +59,9 @@ with DAG(
         'owner': 'Vmasuero'
     },
     schedule_interval='@once',
-    tags=['development', 'arieso', 'kafka']
+    start_date=days_ago(1),
+    tags=['development', 'arieso', 'kafka'],
+    catchup=False
     ) as dag:
     
         t_get_stream_arieso = ConsumeFromTopicOperator(
