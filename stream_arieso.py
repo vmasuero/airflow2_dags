@@ -72,4 +72,4 @@ with DAG(
         )
         
         
-        initialization() #>> t_get_stream_arieso
+        initialization() >> t_get_stream_arieso
