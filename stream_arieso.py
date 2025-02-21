@@ -47,7 +47,7 @@ def get_stream_arieso(message):
 
 def get_stream_arieso_1(message):
     
-
+    print('MESSAGE')
     print( message.value())
 
     return True
