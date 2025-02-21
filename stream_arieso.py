@@ -7,6 +7,9 @@ from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
 from airflow.models import Variable
 
+import sys
+sys.path.append('/usr/lib/ViaviAnalytics')
+
 
 KAFKA_TOPIC = Variable.get('KAFKA_TOPIC')#'Analytics'
 
@@ -71,4 +74,4 @@ with DAG(
         )
         
         
-        initialization() >> t_get_stream_arieso
+        initialization() #>> t_get_stream_arieso
