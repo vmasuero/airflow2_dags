@@ -73,3 +73,6 @@ with DAG(
         
         
         initialization() >> t_get_stream_arieso
+        
+if __name__ == "__main__":
+    dag.cli()
