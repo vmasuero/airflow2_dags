@@ -62,16 +62,16 @@ with DAG(
     max_active_runs=1
     ) as dag:
     
-        t_get_stream_arieso = ConsumeFromTopicOperator(
-            task_id="get_stream_arieso_1",
-            kafka_config_id="ARIESO_KAFKA",
-            topics=[KAFKA_TOPIC],
-            apply_function=get_stream_arieso_1,
-        apply_function_kwargs={},
-        poll_timeout=20,
-        max_messages=20,
-        max_batch_size=2,
-        )
+        #t_get_stream_arieso = ConsumeFromTopicOperator(
+        #    task_id="get_stream_arieso_1",
+        #    kafka_config_id="ARIESO_KAFKA",
+        #    topics=[KAFKA_TOPIC],
+        #    apply_function=get_stream_arieso_1,
+        #apply_function_kwargs={},
+        #poll_timeout=20,
+        #max_messages=20,
+        #max_batch_size=2,
+        #)
         
         
         initialization() #>> t_get_stream_arieso
