@@ -2,6 +2,7 @@ from airflow import DAG
 
 from airflow.operators.python import PythonOperator
 from airflow.sensors.base import BaseSensorOperator
+from airflow.utils.decorators import apply_defaults
 from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
 from airflow.models import Variable
