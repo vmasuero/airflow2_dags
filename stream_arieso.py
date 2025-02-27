@@ -18,7 +18,7 @@ from sqlalchemy.engine import reflection
 
 import sys
 sys.path.append('/usr/lib/ViaviAnalytics')
-
+import Nsa5GAnalyticsStreamingDataFeed_pb2
 
 KAFKA_EPS = [
     {'name':'clarochilelldr01-kafka', 'ip':'172.18.90.72'},
