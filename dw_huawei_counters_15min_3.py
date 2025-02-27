@@ -331,21 +331,10 @@ def create_report_dairy(ti=None, **kwargs):
         
         ##### 5G  ####################
         {'table_id': 1911816247, 'Id':1911816643, 'Counter':'N.ThpVol.DL'},  #
-        {'table_id': 1911816247, 'Id':1911816694, 'Counter':'N.ThpVol.DL.Cell'},  #
+        {'table_id': 1911816247, 'Id':1911816645, 'Counter':'N.ThpVol.UL'},
         {'table_id': 1911816243, 'Id':1911816772, 'Counter':'N.User.RRCConn.Max'},  #
-        
-
-        #'L.Thrp.bits.DL':,
-        #'L.Traffic.User.Avg':,
-        #'VS.HSDPA.DataOutput.Traffic':,
-        #'VS.HSDPA.All.ScheduledNum':,
-        #'VS.SRNCIubBytesHSDPA.Tx':,
-        #'VS.SRNCIubBytesHSDSCHSig.Tx':,
-        #'VS.HSDPA.UE.Mean.Cell':
     ]
     
-    ## SELECCIONAR SOLO LAS TABLAS DE BW
-    SELECTED_TABLES = [1526726664,1526726705]
 
     def proc_csv(path:str):
 
@@ -459,7 +448,7 @@ def create_report_dairy(ti=None, **kwargs):
     FILES_DF['host'] = FILES_DF.path.str.split('_').apply(lambda x: x[1].split('/')[-1] )
     
     ## JUST BW COUNTERS
-    FILES_DF = FILES_DF[ FILES_DF['table'].isin(SELECTED_TABLES) ]
+    FILES_DF = FILES_DF[ FILES_DF['table'].isin(TABLES_NAMES) ]
     
     
     print(FILES_DF.sample(10))
@@ -486,32 +475,51 @@ def create_report_dairy(ti=None, **kwargs):
 
             for _f in as_completed(futures):
                 _to_ap = _f.result()
+                if _to_ap.empty:
+                    continue
+                    
                 _to_ap = _to_ap[ [x for x in _to_ap.columns if x in ID_NAMES] ]
 
                 _TO_APPEND.append(_to_ap)
                 del _f 
 
     DATA_COUNTERS = pd.concat(_TO_APPEND)
-    DATA_COUNTERS = DATA_COUNTERS[ DATA_COUNTERS.index.get_level_values('TECH') == '4g']
     DATA_COUNTERS = DATA_COUNTERS.groupby(level=['SITE', 'CELL', 'TECH', 'PERIOD_START_TIME', 'ENODEID']).max()
     DATA_COUNTERS = DATA_COUNTERS.rename(columns=COLS_NAMES)  
+    
+    DATA_COUNTERS['VOL'] = 0
+    DATA_COUNTERS['THRPUT'] = 0
+    DATA_COUNTERS['CCUSERS'] = 0
+    DATA_COUNTERS['USER_THRPUT'] = 0
+    
+    _filter_4g = DATA_COUNTERS.index.get_level_values('TECH') == '4g'
+    _filter_5g = DATA_COUNTERS.index.get_level_values('TECH') == '5g'
 
     print('Making 4G Kpis')
-    DATA_COUNTERS_4G = DATA_COUNTERS.copy()
+    DATA_COUNTERS_4G = DATA_COUNTERS.loc[_filter_4g].copy()
     DATA_COUNTERS_4G['VOL'] = (DATA_COUNTERS_4G['L.Thrp.bits.DL'] ) / 1000000   #Mbits
     DATA_COUNTERS_4G['THRPUT'] = DATA_COUNTERS_4G['VOL'] / (SAMPLING*60)   #Mbits/s  # 15 minutes
     DATA_COUNTERS_4G['CCUSERS'] = pd.to_numeric(DATA_COUNTERS_4G['L.Traffic.User.Max'], errors='coerce').fillna(0)   # #concurrent users
     DATA_COUNTERS_4G['USER_THRPUT'] = DATA_COUNTERS_4G.apply(lambda x: x['THRPUT'] / x['CCUSERS'] if x['CCUSERS'] > 0 else pd.NA, axis=1) #Mbits/s
     DATA_COUNTERS_4G  = DATA_COUNTERS_4G[['VOL','THRPUT','CCUSERS','USER_THRPUT']]
-    DATA_COUNTERS_4G = DATA_COUNTERS_4G.reset_index()[['SITE','CELL','TECH','ENODEID','PERIOD_START_TIME','VOL', 'THRPUT', 'CCUSERS', 'USER_THRPUT']]
+    
+    print('Making 5G Kpis') 
+    DATA_COUNTERS_5G = DATA_COUNTERS.loc[_filter_5g].copy()
+    DATA_COUNTERS_5G['VOL'] = (DATA_COUNTERS_5G['N.ThpVol.DL'] ) / 1000    #Mbits
+    DATA_COUNTERS_5G['THRPUT'] = DATA_COUNTERS_5G['VOL'] / (SAMPLING*60)   #Mbits/s  # 15 minutes
+    DATA_COUNTERS_5G['CCUSERS'] = pd.to_numeric(DATA_COUNTERS_5G['N.User.RRCConn.Max'], errors='coerce').fillna(0)   # #concurrent users
+    DATA_COUNTERS_5G['USER_THRPUT'] = DATA_COUNTERS_5G.apply(lambda x: x['THRPUT'] / x['CCUSERS'] if x['CCUSERS'] > 0 else pd.NA, axis=1) #Mbits/s
+    DATA_COUNTERS_5G  = DATA_COUNTERS_5G[['VOL','THRPUT','CCUSERS','USER_THRPUT']]   
 
-         
+    DATA_COUNTERS_ALL = pd.concat([DATA_COUNTERS_4G,DATA_COUNTERS_5G])
+    DATA_COUNTERS_ALL = DATA_COUNTERS_ALL.reset_index()[['SITE','CELL','TECH','ENODEID','PERIOD_START_TIME','VOL', 'THRPUT', 'CCUSERS', 'USER_THRPUT']]
+   
     _report_output = "%s/REPORT_HUAWEI_%s.parquet"%(
         _path_file_s3,
         _date_prefix_by_day
     )
     print("Guardando Reporte en: %s"%_report_output)
-    upload_parquet_s3(DATA_COUNTERS_4G,_report_output, s3_api)
+    upload_parquet_s3(DATA_COUNTERS_ALL,_report_output, s3_api)
     
     ti.xcom_push(key='report_output', value=_report_output)
     return True

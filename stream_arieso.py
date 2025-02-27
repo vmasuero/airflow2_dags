@@ -1,6 +1,4 @@
 from airflow import DAG
-from airflow.providers.apache.kafka.operators.produce import ProduceToTopicOperator
-from airflow.providers.apache.kafka.operators.consume import ConsumeFromTopicOperator
 
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
@@ -9,13 +7,17 @@ from airflow.models import Variable
 
 from airflow.utils.dates import days_ago
 
+
+from confluent_kafka import Consumer, KafkaException
+from confluent_kafka.admin import AdminClient
+
+
+
 import sys
 sys.path.append('/usr/lib/ViaviAnalytics')
 
 
 KAFKA_TOPIC = Variable.get('KAFKA_TOPIC')#'Analytics'
-
-
 
 
 
@@ -64,19 +66,7 @@ with DAG(
     catchup=False
     ) as dag:
     
-        t_get_stream_arieso = ConsumeFromTopicOperator(
-            task_id="get_stream_arieso_1",
-            kafka_config_id="ARIESO_KAFKA",
-            topics=[KAFKA_TOPIC],
-            apply_function=get_stream_arieso_1,
-            apply_function_kwargs={},
-            poll_timeout=20,
-            max_messages=20,
-            max_batch_size=2,
-        )
-        
-        
-        initialization() >> t_get_stream_arieso
+        initialization() 
         
 if __name__ == "__main__":
     dag.cli()
