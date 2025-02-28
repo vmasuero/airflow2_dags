@@ -262,7 +262,7 @@ with DAG(
     
         with TaskGroup(group_id='consumers_tasks') as consumers_tasks:
 
-            for i,broker_id in enumerate(KAFKA_NAMES[:2]):
+            for i,broker_id in enumerate(KAFKA_NAMES[:]):
                 print("adding broker: %s"%broker_id)
                 
                 kafka_sensor_task = ConfluentKafkaSensor(
