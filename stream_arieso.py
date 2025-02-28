@@ -74,6 +74,8 @@ REQUIRED_COLS = [
     'nrerab_overallaveragedownlinkthroughput'
 ]
 
+NRERAB_COLS = [x.replace('nrerab_','') for x in REQUIRED_COLS if 'nrerab' in x]
+
 def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
     
     def message_to_dict(msg):
@@ -135,7 +137,10 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
                 
                 for k, v in cell.items():
                     row[f"NrCells_{k}"] = v
-                    
+                
+                for k in NRERAB_COLS:
+                    row[f"NrErab_{k}"] = 0
+                         
                 rows.append(row)
                 
             return pd.DataFrame(rows)
