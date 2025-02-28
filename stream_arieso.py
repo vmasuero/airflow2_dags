@@ -213,7 +213,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
 
             if self.message_count >= self.max_messages:
                 self.log.info("Processed maximum number of messages: %s", self.max_messages)
-            else
+            else:
                 self.log.info("Processed  messages: %s", self.message_count)
                 
             if len(data_collected) == 0:
