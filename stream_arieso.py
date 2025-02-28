@@ -152,7 +152,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
     _msg_df =  dict_to_dataframe(_msg_dict)
 
     if _msg_df.empty:
-        print('Error con mensaje:')
+        print('Se descarta mensaje:')
         print(_msg_dict)
         return pd.DataFrame()
         
@@ -290,7 +290,7 @@ with DAG(
                     process_message_func=process_message,
                     mode="reschedule",  
                     poke_interval=10,   
-                    timeout=300  
+                    timeout=840  
                 )
     
                 kafka_sensor_task
