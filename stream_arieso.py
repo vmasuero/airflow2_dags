@@ -271,6 +271,8 @@ with DAG(
                     timeout=300  
                 )
     
+                kafka_sensor_task
+                
         initialization() >> consumers_tasks
         
 if __name__ == "__main__":
