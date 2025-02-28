@@ -255,7 +255,7 @@ with DAG(
                 print("adding broker: %s"%broker_id)
                 
                 kafka_sensor_task = ConfluentKafkaSensor(
-                    task_id = "kafka_sensor",
+                    task_id = "kafka_sensor_%s"%i,
                     topic = KAFKA_TOPIC,
                     kafka_config={
                         "bootstrap.servers": "%s:9092"%broker_id, 
