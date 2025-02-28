@@ -17,6 +17,8 @@ from confluent_kafka.admin import AdminClient
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import reflection
+from sqlalchemy.exc import IntegrityError
+#from psycopg2.errors import UniqueViolation
 
 
 import sys
