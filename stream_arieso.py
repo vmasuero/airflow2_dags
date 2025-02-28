@@ -274,7 +274,7 @@ with DAG(
                         "auto.offset.reset": "earliest",
                     },
                     broker_id=broker_id,
-                    max_messages=5,  
+                    max_messages=1000,  
                     process_message_func=process_message,
                     mode="reschedule",  
                     poke_interval=10,   
