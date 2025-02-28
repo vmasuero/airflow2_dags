@@ -155,7 +155,15 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
     _msg_df = _msg_df.round(0)           
     _msg_df['date_starttime'] = pd.to_datetime(_msg_df['segmentstarttime'], unit='ms', utc=True)
     _msg_df['id'] = _msg_df.apply(lambda x: str(x.nrcells_nrcelllabel) + '-' + str(x.imsi) + '-' + str(x.segmentstarttime), axis=1)
-    _msg_df = _msg_df[REQUIRED_COLS + ['id','date_starttime']]
+    try:
+        
+        _msg_df = _msg_df[REQUIRED_COLS + ['id','date_starttime']]
+        
+    except KeyError:
+        print('Mensaje con columna erroneas')
+        print(_msg_df.columns)
+        return pd.DataFrame()
+        
     _msg_df['broker_id'] = broker_id
     
     del _msg_df['segmentstarttime']
@@ -209,7 +217,9 @@ class ConfluentKafkaSensor(BaseSensorOperator):
                 self.log.info("Processed maximum number of messages: %s", self.max_messages)
             
             DATA_COLLECTED_DF = pd.concat(data_collected)
-            print(DATA_COLLECTED_DF.sample(5))
+            print("DEBUG:")
+            print(DATA_COLLECTED_DF['id'].sample(5))
+            print()
             
             print('Uploading to Database: %s'%POSTGRES_IP)
             try:
