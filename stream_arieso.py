@@ -209,6 +209,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
                 self.log.info("Processed maximum number of messages: %s", self.max_messages)
             
             DATA_COLLECTED_DF = pd.concat(data_collected)
+            print(DATA_COLLECTED_DF.sample(5))
             
             print('Uploading to Database: %s'%POSTGRES_IP)
             try:
