@@ -249,26 +249,28 @@ with DAG(
     catchup=False
     ) as dag:
     
-        #with TaskGroup(group_id='dw_tasks') as dw_tasks:
+        with TaskGroup(group_id='consumers_tasks') as consumers_tasks:
 
-        #for i,server_conn in enumerate(PM_HUAWEI_SERVERS[:2]):
+            for i,broker_id in enumerate(KAFKA_NAMES[:2]):
+                print("adding broker: %s"%broker_id)
+                
+                kafka_sensor_task = ConfluentKafkaSensor(
+                    task_id = "kafka_sensor",
+                    topic = KAFKA_TOPIC,
+                    kafka_config={
+                        "bootstrap.servers": "%s:9092"%broker_id, 
+                        "group.id": KAFKA_GROUPID,
+                        "auto.offset.reset": "earliest",
+                    },
+                    broker_id=broker_id,
+                    max_messages=5,  
+                    process_message_func=process_message,
+                    mode="reschedule",  
+                    poke_interval=10,   
+                    timeout=300  
+                )
     
-        #kafka_sensor_task = ConfluentKafkaSensor(
-        #    task_id="confluent_kafka_sensor",
-        #    topic="my_topic",  # Replace with your Kafka topic
-        #    kafka_config={
-        #        "bootstrap.servers": "localhost:9092",  # Your Kafka broker
-        #        "group.id": "airflow_sensor_group",
-        #        "auto.offset.reset": "earliest",
-        #    },
-        #    max_messages=5,  # Set the maximum number of messages to process
-        #    process_message_func=process_message,
-        #    mode="reschedule",  # Recommended to free up worker slots while waiting
-        #    poke_interval=10,   # Poll every 10 seconds
-        #    timeout=300         # Sensor will time out after 300 seconds if condition isn't met
-        #    )
-    
-        initialization() 
+        initialization() >> consumers_tasks
         
 if __name__ == "__main__":
     dag.cli()
