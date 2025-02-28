@@ -265,7 +265,7 @@ with DAG(
         "depends_on_past": False,
         'owner': 'Vmasuero'
     },
-    schedule_interval='@once',
+    schedule_interval='*/15 * * * *',
     start_date=days_ago(1),
     tags=['development', 'arieso', 'kafka'],
     catchup=False
@@ -285,7 +285,7 @@ with DAG(
                         "auto.offset.reset": "earliest",
                     },
                     broker_id=broker_id,
-                    max_messages=1000,  
+                    max_messages=5000,  
                     process_message_func=process_message,
                     mode="reschedule",  
                     poke_interval=10,   
