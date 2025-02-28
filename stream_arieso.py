@@ -1,4 +1,5 @@
 from airflow import DAG
+import pandas as pd
 
 from airflow.operators.python import PythonOperator
 from airflow.sensors.base import BaseSensorOperator
