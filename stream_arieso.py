@@ -159,7 +159,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
         _msg_df = _msg_df[REQUIRED_COLS + ['id','date_starttime']]
     except KeyError:
         print('Mensaje con columna erroneas')
-        print(_msg_df.columns)
+        print(_msg_dict)
         return pd.DataFrame()
         
     _msg_df['broker_id'] = broker_id
@@ -203,7 +203,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
                     
                 if msg.error():
                     self.log.error("Consumer error: %s", msg.error())
-                    break
+                    return False
                     
                 _msg_obj = DECO_NSA.FromString(msg.value())
                 _msg_df_append = self.process_message_func(_msg_obj,self.broker_id)
@@ -213,15 +213,22 @@ class ConfluentKafkaSensor(BaseSensorOperator):
 
             if self.message_count >= self.max_messages:
                 self.log.info("Processed maximum number of messages: %s", self.max_messages)
+            else
+                self.log.info("Processed  messages: %s", self.message_count)
                 
-            if len(data_collected) > 0:
-                DATA_COLLECTED_DF = pd.concat(data_collected)
-                print("DEBUG:")
-                print(DATA_COLLECTED_DF['id'].sample(5))
-                print()
+            if len(data_collected) == 0:
+                print('No info received')
+                return False
+            
                 
-                print('Uploading to Database: %s'%POSTGRES_IP)
-                DATA_COLLECTED_DF.to_sql(POSTGRES_TABLE, POSTGRES_ENGINE, if_exists='append', index=False)     
+            DATA_COLLECTED_DF = pd.concat(data_collected)
+            print("DEBUG:")
+            print(DATA_COLLECTED_DF['id'].sample(5))
+            print()
+            
+            print('Uploading to Database: %s'%POSTGRES_IP)
+            DATA_COLLECTED_DF.to_sql(POSTGRES_TABLE, POSTGRES_ENGINE, if_exists='append', index=False)     
+            return True
 
         except KafkaException as e:
             self.log.error("Kafka exception occurred: %s", e)
@@ -240,8 +247,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
 )
 def initialization(ds=None, ti=None, **kwargs):
 
-    
-    print("TOPIC %s"%KAFKA_TOPIC)
+    print("TOPIC: %s"%KAFKA_TOPIC)
     print(ds)
  
     
