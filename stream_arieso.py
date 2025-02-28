@@ -166,7 +166,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
 class ConfluentKafkaSensor(BaseSensorOperator):
 
     @apply_defaults
-    def __init__(self, topic, kafka_config, max_messages=1, process_message_func=None, broker_id, *args, **kwargs):
+    def __init__(self, topic, kafka_config, broker_id, max_messages=1, process_message_func=None, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.topic = topic
