@@ -18,7 +18,6 @@ from confluent_kafka.admin import AdminClient
 from sqlalchemy import create_engine
 from sqlalchemy.engine import reflection
 from sqlalchemy.exc import IntegrityError
-#from psycopg2.errors import UniqueViolation
 
 
 import sys
@@ -79,98 +78,135 @@ REQUIRED_COLS = [
 NRERAB_COLS = [x.replace('nrerab_','') for x in REQUIRED_COLS if 'nrerab' in x]
 
 def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
-    
-    def message_to_dict(msg):
 
-        result = {}
-        for field in msg.DESCRIPTOR.fields:
-            field_name = field.name
-
-            if field.label != field.LABEL_REPEATED:
-                if field.cpp_type == field.CPPTYPE_MESSAGE:
-                
-                    if not msg.HasField(field_name):
-                        continue
-                        
-                    value = getattr(msg, field_name)
-                    result[field_name] = message_to_dict(value)
-                    
-                else:
-                    result[field_name] = getattr(msg, field_name)
-                    
-            else:
-                value_list = getattr(msg, field_name)
-                
-                if value_list:
-                    result[field_name] = []
-                    
-                    for item in value_list:
-                        if field.cpp_type == field.CPPTYPE_MESSAGE:
-                            result[field_name].append(message_to_dict(item))
-                        else:
-                            result[field_name].append(item)
-        return result
-
-    def dict_to_dataframe(msg_dict:dict):
-        common_fields = {k: v for k, v in msg_dict.items() if k not in ['NrCells', 'NrErab']}
-    
-        rows = []
-        has_cells = 'NrCells' in msg_dict and msg_dict['NrCells']
-        has_erab = 'NrErab' in msg_dict and msg_dict['NrErab']
+    INT_COLS = [
+        'nrcells_medianaveragersrp', 
+        'nrcells_durationms',
+        'nrerab_nruplinkvolumebytes',
+        'nrerab_nrdownlinkvolumebytes',
+        'nrerab_nraverageuplinkthroughput',
+        'nrerab_nraveragedownlinkthroughput',
+        'nrerab_lteaverageuplinkthroughput',
+        'nrerab_lteaveragedownlinkthroughput',
+        'nrerab_overallaverageuplinkthroughput',
+        'nrerab_overallaveragedownlinkthroughput'
+    ]
         
-        if has_cells and has_erab:
-            for cell in msg_dict['NrCells']:
-                
-                for erab in msg_dict['NrErab']:
-                    row = common_fields.copy()
-                    for k, v in cell.items():
-                        row[f"NrCells_{k}"] = v
-                        
-                    for k, v in erab.items():
-                        row[f"NrErab_{k}"] = v
-                        
-                    rows.append(row)
-                    
-            return pd.DataFrame(rows)
+    
+    def proc_message(msg_obj):
+    
+        def proc_nrcells(obj_msg):
+
+            PRI_FIELDS = [
+                'NrCellLabel',
+                #'MedianAverageRsrp',
+                #'DurationMs'
+            ]
+            PRI_FIELDS = [x.lower() for x in PRI_FIELDS]
+            _exist_fields = [x[0].name.lower() for x in obj_msg.ListFields()]
+        
+            if not all([x in _exist_fields for x in PRI_FIELDS]):
+                return {}
+        
+            if not re.match(r'.*[45]g.*', obj_msg.NrCellLabel.lower()):
+                return {}
             
-        elif has_cells:
-            for cell in msg_dict['NrCells']:
-                row = common_fields.copy()
+            return {
+                'nrcells_NrCellLabel': obj_msg.NrCellLabel.lower(),
+                'nrcells_MedianAverageRsrp': obj_msg.MedianAverageRsrp,
+                'nrcells_DurationMs': obj_msg.DurationMs
+            }
+
+        def proc_nrerab(obj_msg):
                 
-                for k, v in cell.items():
-                    row[f"NrCells_{k}"] = v
-                
-                for k in NRERAB_COLS:
-                    row[f"NrErab_{k}"] = 0
-                         
-                rows.append(row)
-                
-            return pd.DataFrame(rows)
+            PRI_FIELDS = [
+                'NrUplinkVolumeBytes', 
+                'NrDownlinkVolumeBytes', 
+                'NrAverageUplinkThroughput', 
+                'NrAverageDownlinkThroughput', 
+                'LteAverageUplinkThroughput',
+                'LteAverageDownlinkThroughput', 
+                'OverallAverageUplinkThroughput',
+                'OverallAverageDownlinkThroughput'
+            ]
             
-        else:
-            return pd.DataFrame()
+            return {
+                'nrerab_NrUplinkVolumeBytes': obj_msg.NrUplinkVolumeBytes,
+                'nrerab_NrDownlinkVolumeBytes': obj_msg.NrDownlinkVolumeBytes,
+                'nrerab_NrAverageUplinkThroughput': obj_msg.NrAverageUplinkThroughput,
+                'nrerab_NrAverageDownlinkThroughput': obj_msg.NrAverageDownlinkThroughput,
+                'nrerab_LteAverageUplinkThroughput': obj_msg.LteAverageUplinkThroughput,
+                'nrerab_LteAverageDownlinkThroughput': obj_msg.LteAverageDownlinkThroughput,
+                'nrerab_OverallAverageUplinkThroughput': obj_msg.OverallAverageUplinkThroughput,
+                'nrerab_OverallAverageDownlinkThroughput': obj_msg.OverallAverageDownlinkThroughput
+            }
+    
+        ret_obj = []
+        ret_header = {}
+        
+        ret_nrerab_zero = {
+            'nrerab_NrUplinkVolumeBytes': 0, 
+            'nrerab_NrDownlinkVolumeBytes': 0, 
+            'nrerab_NrAverageUplinkThroughput': 0, 
+            'nrerab_NrAverageDownlinkThroughput': 0, 
+            'nrerab_LteAverageUplinkThroughput': 0,
+            'nrerab_LteAverageDownlinkThroughput': 0, 
+            'nrerab_OverallAverageUplinkThroughput': 0,
+            'nrerab_OverallAverageDownlinkThroughput': 0
+        } 
+
+        PRI_FIELDS = [
+            'SegmentStartTime',
+            'SegmentEndTime',
+            'Imsi',
+            'LteStartCellName',
+            'MinutesOfUse',
+            'NrCells'
+        ]
+
+        PRI_FIELDS = [x.lower() for x in PRI_FIELDS]
+        
+        _exist_fields = [x[0].name.lower() for x in obj_msg.ListFields()]
+
+        if not all([x in _exist_fields for x in PRI_FIELDS]):
+            return {}
+
+        if not re.match(r'.*[45]g.*', obj_msg.LteStartCellName.lower()):
+            return {}
+
+        ret_header['SegmentStartTime'] = obj_msg.SegmentStartTime
+        ret_header['SegmentEndTime'] = obj_msg.SegmentEndTime
+        ret_header['Imsi'] = obj_msg.Imsi
+        ret_header['LteStartCellName'] = obj_msg.LteStartCellName
+        ret_header['MinutesOfUse'] = obj_msg.MinutesOfUse
+        
+        for i,_obj_nrcell in enumerate(obj_msg.NrCells):
+            ret_nrcell = proc_nrcells(_obj_nrcell) 
+            
+            if ('nrerab' in _exist_fields) & (i == 0):
+                ret_nrerab = proc_nrerab(obj_msg.NrErab[0])
+                ret_obj.append({**ret_header,**ret_nrcell,**ret_nrerab})
+            else:
+                ret_obj.append({**ret_header,**ret_nrcell,**ret_nrerab_zero})
+
+        return ret_obj
   
-    _msg_dict = message_to_dict(msg_obj)
-    _msg_df =  dict_to_dataframe(_msg_dict)
+    _msg_df = proc_message(msg_obj)
 
     if _msg_df.empty:
         print('Se descarta mensaje:')
-        print(_msg_dict)
+        print(msg_obj)
         return pd.DataFrame()
         
     _msg_df.columns = _msg_df.columns.str.lower() 
-    _msg_df = _msg_df.round(0)           
+    
+    for col in [x for x in _msg_df.columns if x in INT_COLS]:
+        _msg_df[col] = _msg_df[col].round(0).astype(int) 
+   
     _msg_df['date_starttime'] = pd.to_datetime(_msg_df['segmentstarttime'], unit='ms', utc=True)
     _msg_df['id'] = _msg_df.apply(lambda x: str(x.nrcells_nrcelllabel) + '-' + str(x.imsi) + '-' + str(x.segmentstarttime), axis=1)
-    try:
-        _msg_df = _msg_df[REQUIRED_COLS + ['id','date_starttime']]
-    except KeyError:
-        print('Mensaje con columna erroneas')
-        print(_msg_dict)
-        return pd.DataFrame()
-        
+    _msg_df = _msg_df[REQUIRED_COLS + ['id','date_starttime']]
     _msg_df['broker_id'] = broker_id
-    
     del _msg_df['segmentstarttime']
     
     return _msg_df
@@ -269,7 +305,7 @@ with DAG(
     },
     schedule_interval='*/15 * * * *',
     start_date=days_ago(1),
-    max_active_runs= 1,
+    max_active_runs= 2,
     tags=['development', 'arieso', 'kafka'],
     catchup=False
     ) as dag:
