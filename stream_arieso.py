@@ -193,6 +193,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
         return ret_obj
   
     _msg_df = proc_message(msg_obj)
+    _msg_df = pd.DataFrame(_msg_df)
 
     if _msg_df.empty:
         print('Se descarta mensaje:')
