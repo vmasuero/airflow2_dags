@@ -10,6 +10,7 @@ from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
 
 from airflow.utils.dates import days_ago
+import re
 
 
 from confluent_kafka import Consumer, KafkaException
