@@ -93,7 +93,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
     ]
         
     
-    def proc_message(msg_obj):
+    def proc_message(obj_msg):
     
         def proc_nrcells(obj_msg):
 
