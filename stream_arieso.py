@@ -53,7 +53,7 @@ POSTGRES_PASS = 'vtrclaro1234'
 POSTGRES_DB = 'Nsa5GAnalyticsStreamingDataFeed'
 POSTGRES_EP = 'postgresql://%s:%s@%s:5432/%s'%(POSTGRES_USER,POSTGRES_PASS,POSTGRES_IP,POSTGRES_DB)
 POSTGRES_TABLE = 'feeds_nr'
-POSTGRES_ENGINE = create_engine(POSTGRES_EP)
+POSTGRES_ENGINE = create_engine(POSTGRES_EP, connect_args={'options': '-c statement_timeout=900000'})
 
 
 DECO_NSA = Nsa5GAnalyticsStreamingDataFeed_pb2.Nsa5GAnalyticsStreamingFeedRecord()
