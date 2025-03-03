@@ -184,6 +184,9 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
         for i,_obj_nrcell in enumerate(obj_msg.NrCells):
             ret_nrcell = proc_nrcells(_obj_nrcell) 
             
+            if ret_nrcell == {}:
+                return {}
+            
             if ('nrerab' in _exist_fields) & (i == 0):
                 ret_nrerab = proc_nrerab(obj_msg.NrErab[0])
                 ret_obj.append({**ret_header,**ret_nrcell,**ret_nrerab})
