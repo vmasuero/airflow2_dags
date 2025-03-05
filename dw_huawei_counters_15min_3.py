@@ -351,7 +351,7 @@ def create_report_dairy(ti=None, **kwargs):
             if re.match(r'\d+([isp])?_\d\d\d_[a-z0-9]+_[a-z0-9]+-[\d]+', text):
                 _params = text.split('_')
                 _site = "%s_%s"%(_params[0], _params[1])
-                _tech = _params[2]
+                _tech = _params[2].upper()
                 _cell = text
                 
                 return [_site,_cell,_tech]
@@ -367,7 +367,7 @@ def create_report_dairy(ti=None, **kwargs):
             if re.match(r'm[a-zA-Z0-9]+_\d+_[a-zA-Z0-9]+_[a-zA-Z0-9]+-[\d]+', text):
                 _params = text.split('_')
                 _site = "%s_%s"%(_params[0], _params[1])
-                _tech = _params[2]
+                _tech = _params[2].upper()
                 _cell = text
                 
                 return [_site,_cell,_tech]
@@ -379,6 +379,14 @@ def create_report_dairy(ti=None, **kwargs):
                 _cell = text
                 
                 return _site,_cell,_tech
+             
+            if re.match(r'\d\d_\d\d\d_5g', text):
+                _params = text.split('_')
+                _site = "%s_%s"%(_params[0], _params[1])
+                _tech = '5G'
+                _cell = text
+        
+                return _site,_cell,_tech  
                 
             _rand = randint(1000,10000)
             return ['unknown_%s'%_rand,'unknown_%s'%_rand,'unknown_%s'%_rand]
@@ -391,12 +399,13 @@ def create_report_dairy(ti=None, **kwargs):
             
         _data = _data[pd.notnull(_data['Object Name'])]
         
-        _data[['Cell_ID_1','ENODEID']] = _data['Object Name'].str.lower().str.extract(r'.*cell\ name=([0-9a-z_-]+_[345]g_[0-9a-z_-]+).*enodeb\ +id=(\d+).*')
-        _data['Cell_ID_2'] = _data['Object Name'].str.lower().str.extract(r'.*label=([0-9a-z_-]+_3g_[0-9a-z_-]+).*')[0]
-        _data[['Cell_ID_1','Cell_ID_2']] = _data[['Cell_ID_1','Cell_ID_2']].fillna('')
-        _data['Cell_ID'] = _data['Cell_ID_1'] + _data['Cell_ID_2']
+        _data['Cell_ID_1'] = _data['Object Name'].str.lower().str.extract(r'.*cell\ name=([0-9a-z_-]+_[345]g_[0-9a-z_-]+).*enodeb\ +id=(\d+).*')[0].fillna('')
+        _data['Cell_ID_2'] = _data['Object Name'].str.lower().str.extract(r'.*label=([0-9a-z_-]+_3g_[0-9a-z_-]+).*')[0].fillna('')
+        _data['Cell_ID_3'] = _data['Object Name'].str.lower().str.extract(r'.*gnode.*function\ +name=([0-9a-z_-]+).*').fillna('')
         
-        _data = _data.drop(['Cell_ID_1','Cell_ID_2','Reliability','Granularity Period'], axis=1)
+        _data['Cell_ID'] = _data['Cell_ID_1'] + _data['Cell_ID_2'] + _data['Cell_ID_3']
+        
+        _data = _data.drop(['Cell_ID_1','Cell_ID_2','Cell_ID_3','Reliability','Granularity Period'], axis=1)
         
         _numeric_cols = _data.columns[_data.columns.str.contains(r'\d+')].tolist()
         if len(_numeric_cols) == 0:
@@ -412,13 +421,13 @@ def create_report_dairy(ti=None, **kwargs):
         _data['PERIOD_START_TIME'] = pd.to_datetime(_data['PERIOD_START_TIME'], format='%Y-%m-%d %H:%M')
         _data = _data[pd.notnull(_data['PERIOD_START_TIME'])] 
 
-        _data = _data[REPORT_COLS + ['ENODEID'] +  _numeric_cols]
-        _data = _data.set_index(['SITE','CELL','TECH','PERIOD_START_TIME','ENODEID'])
+        _data = _data[REPORT_COLS +  _numeric_cols]
+        _data = _data.set_index(['SITE','CELL','TECH','PERIOD_START_TIME'])
 
         _data = _data[_numeric_cols]
         _data.columns = [int(x) for x in _data.columns]
 
-        _data = _data.groupby(level=['SITE','CELL','TECH','PERIOD_START_TIME','ENODEID'], as_index=True).max()
+        _data = _data.groupby(level=['SITE','CELL','TECH','PERIOD_START_TIME'], as_index=True).max()
         
         return _data
         
@@ -484,7 +493,7 @@ def create_report_dairy(ti=None, **kwargs):
                 del _f 
 
     DATA_COUNTERS = pd.concat(_TO_APPEND)
-    DATA_COUNTERS = DATA_COUNTERS.groupby(level=['SITE', 'CELL', 'TECH', 'PERIOD_START_TIME', 'ENODEID']).max()
+    DATA_COUNTERS = DATA_COUNTERS.groupby(level=['SITE', 'CELL', 'TECH', 'PERIOD_START_TIME']).max()
     DATA_COUNTERS = DATA_COUNTERS.rename(columns=COLS_NAMES)  
     
     DATA_COUNTERS['VOL'] = 0
@@ -492,8 +501,8 @@ def create_report_dairy(ti=None, **kwargs):
     DATA_COUNTERS['CCUSERS'] = 0
     DATA_COUNTERS['USER_THRPUT'] = 0
     
-    _filter_4g = DATA_COUNTERS.index.get_level_values('TECH') == '4g'
-    _filter_5g = DATA_COUNTERS.index.get_level_values('TECH') == '5g'
+    _filter_4g = DATA_COUNTERS.index.get_level_values('TECH') == '4G'
+    _filter_5g = DATA_COUNTERS.index.get_level_values('TECH') == '5G'
 
     print('Making 4G Kpis')
     DATA_COUNTERS_4G = DATA_COUNTERS.loc[_filter_4g].copy()
@@ -512,7 +521,7 @@ def create_report_dairy(ti=None, **kwargs):
     DATA_COUNTERS_5G  = DATA_COUNTERS_5G[['VOL','THRPUT','CCUSERS','USER_THRPUT']]   
 
     DATA_COUNTERS_ALL = pd.concat([DATA_COUNTERS_4G,DATA_COUNTERS_5G])
-    DATA_COUNTERS_ALL = DATA_COUNTERS_ALL.reset_index()[['SITE','CELL','TECH','ENODEID','PERIOD_START_TIME','VOL', 'THRPUT', 'CCUSERS', 'USER_THRPUT']]
+    DATA_COUNTERS_ALL = DATA_COUNTERS_ALL.reset_index()[['SITE','CELL','TECH','PERIOD_START_TIME','VOL', 'THRPUT', 'CCUSERS', 'USER_THRPUT']]
    
     _report_output = "%s/REPORT_HUAWEI_%s.parquet"%(
         _path_file_s3,
