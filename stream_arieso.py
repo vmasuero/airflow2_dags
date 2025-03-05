@@ -243,7 +243,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
 
             while self.message_count < self.max_messages:
             
-                msg = consumer.poll(timeout=1.0)
+                msg = consumer.poll(timeout=300000)  #300 segundos
                 
                 if msg is None:
                     break
