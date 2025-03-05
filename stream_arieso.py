@@ -109,9 +109,6 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
             if not all([x in _exist_fields for x in PRI_FIELDS]):
                 return {}
         
-            if not re.match(r'.*[45]g.*', obj_msg.NrCellLabel.lower()):
-                return {}
-            
             return {
                 'nrcells_NrCellLabel': obj_msg.NrCellLabel.lower(),
                 'nrcells_MedianAverageRsrp': obj_msg.MedianAverageRsrp,
@@ -172,7 +169,8 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
         if not all([x in _exist_fields for x in PRI_FIELDS]):
             return {}
 
-        if not re.match(r'.*[45]g.*', obj_msg.LteStartCellName.lower()):
+        #if not re.match(r'.*[45]g.*', obj_msg.LteStartCellName.lower()):
+        if not re.match(r'^\d\d.*', obj_msg.LteStartCellName.lower()):
             return {}
 
         ret_header['SegmentStartTime'] = obj_msg.SegmentStartTime
@@ -261,7 +259,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
                 self.message_count += 1
 
             if self.message_count >= self.max_messages:
-                self.log.info("Processed maximum number of messages: %s", self.max_messages)
+                self.log.info("MAX REACHED, Processed maximum number of messages: %s", self.max_messages)
             else:
                 self.log.info("Processed  messages: %s", self.message_count)
                 
