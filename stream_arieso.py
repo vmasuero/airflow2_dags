@@ -201,6 +201,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
     if _msg_df.empty:
         print('Se descarta mensaje:')
         print(msg_obj)
+        print(msg_obj.SerializeToString())
         return pd.DataFrame()
         
     _msg_df.columns = _msg_df.columns.str.lower() 
