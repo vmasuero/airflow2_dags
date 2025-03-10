@@ -93,6 +93,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
         'nrerab_overallaveragedownlinkthroughput'
     ]
         
+        
     
     def proc_message(obj_msg):
     
@@ -167,6 +168,8 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
         _exist_fields = [x[0].name.lower() for x in obj_msg.ListFields()]
 
         if not all([x in _exist_fields for x in PRI_FIELDS]):
+            print("MIssing:")
+            print([x  for x in PRI_FIELDS if x not in _exist_fields])
             return {}
 
         #if not re.match(r'.*[45]g.*', obj_msg.LteStartCellName.lower()):
@@ -198,7 +201,6 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
 
     if _msg_df.empty:
         print('Se descarta mensaje:')
-        print(msg_obj)
         print(msg_obj.SerializeToString())
         return pd.DataFrame()
         
