@@ -311,7 +311,7 @@ with DAG(
     },
     schedule_interval='*/15 * * * *',
     start_date=days_ago(1),
-    max_active_runs= 2,
+    max_active_runs= 4,
     tags=['development', 'arieso', 'kafka'],
     catchup=False
     ) as dag:
