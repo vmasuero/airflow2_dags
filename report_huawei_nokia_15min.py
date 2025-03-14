@@ -345,4 +345,4 @@ with DAG(
     max_active_runs=1
     ) as dag:
     
-        get_dates() >> check_s3_file() #>> concat_files()
+        get_dates() >> check_s3_file() >> concat_files()
