@@ -252,7 +252,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
                     
                 if msg.error():
                     self.log.error("Consumer error: %s", msg.error())
-                    return False
+                    continue
                     
                 _msg_obj = DECO_NSA.FromString(msg.value())
                 _msg_df_append = self.process_message_func(_msg_obj,self.broker_id)
@@ -267,7 +267,7 @@ class ConfluentKafkaSensor(BaseSensorOperator):
                 
             if len(data_collected) == 0:
                 print('No info received')
-                return False
+                return True
             
                 
             DATA_COLLECTED_DF = pd.concat(data_collected)
@@ -330,7 +330,7 @@ with DAG(
                         "auto.offset.reset": "earliest",
                     },
                     broker_id=broker_id,
-                    max_messages=5000,  
+                    max_messages=10000,  
                     process_message_func=process_message,
                     mode="reschedule",  
                     poke_interval=10,   
