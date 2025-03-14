@@ -340,7 +340,7 @@ with DAG(
         "retry_delay": timedelta(minutes=1),
     },
     start_date=pendulum.datetime( 2025, 2, 4, tz='America/Santiago'),
-    catchup=False,
+    catchup=True,
     tags=['development', 'netact', 'huawei'],
     max_active_runs=1
     ) as dag:
