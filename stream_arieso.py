@@ -334,9 +334,9 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         else:
             self.log.info("Processed  messages: %s", self.message_count)
             
-        if len(data_collected) == 0:
-            print('No info received')
-            return True
+    if len(data_collected) == 0:
+        print('No info received')
+        return True
     
     DATA_COLLECTED_DF = pd.concat(data_collected)
     print("DEBUG:")
