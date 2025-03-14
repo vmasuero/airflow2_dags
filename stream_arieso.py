@@ -329,11 +329,11 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
                     
         message_count += 1
 
-        if self.message_count >= self.max_messages:
-            self.log.info("MAX REACHED, Processed maximum number of messages: %s", self.max_messages)
-        else:
-            self.log.info("Processed  messages: %s", self.message_count)
-            
+    if message_count >= max_messages:
+        self.log.info("MAX REACHED, Processed maximum number of messages: %s", max_messages)
+    else:
+        self.log.info("Processed  messages: %s", message_count)
+        
     if len(data_collected) == 0:
         print('No info received')
         return True
