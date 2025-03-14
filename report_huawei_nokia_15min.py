@@ -334,7 +334,6 @@ with DAG(
     dag_id='report_huawei_nokia_15min',
     schedule_interval= "@daily",
     default_args={
-        "depends_on_past": False,
         'owner': 'Vmasuero',
         "retries": 1,
         "retry_delay": timedelta(minutes=1),
