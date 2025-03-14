@@ -292,6 +292,62 @@ class ConfluentKafkaSensor(BaseSensorOperator):
         finally:
             consumer.close()
 
+
+
+
+
+
+
+
+
+
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
+
+    consumer = Consumer(kafka_config)
+    consumer.subscribe([topic])
+    
+    data_collected = []
+    message_count = 0
+        
+    while message_count < max_messages:
+            
+        msg = consumer.poll(timeout=5)  #5 segundos
+                
+        if msg is None:
+            break
+            
+        if msg.error():
+            self.log.error("Consumer error: %s", msg.error())
+            continue
+                    
+        msg_obj = DECO_NSA.FromString(msg.value())
+        msg_df_append = process_message(msg_obj, broker_id)
+        data_collected.append(_msg_df_append)
+                    
+        message_count += 1
+
+        if self.message_count >= self.max_messages:
+            self.log.info("MAX REACHED, Processed maximum number of messages: %s", self.max_messages)
+        else:
+            self.log.info("Processed  messages: %s", self.message_count)
+            
+        if len(data_collected) == 0:
+            print('No info received')
+            return True
+    
+    DATA_COLLECTED_DF = pd.concat(data_collected)
+    print("DEBUG:")
+    print(DATA_COLLECTED_DF['id'].sample(5))
+    print()
+    
+    print('Uploading to Database: %s'%POSTGRES_IP)
+    DATA_COLLECTED_DF.to_sql(POSTGRES_TABLE, POSTGRES_ENGINE, if_exists='append', index=False)     
+    
+    return True
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
@@ -323,23 +379,30 @@ with DAG(
             for i,broker_id in enumerate(KAFKA_NAMES[:]):
                 print("adding broker: %s"%broker_id)
                 
-                kafka_sensor_task = ConfluentKafkaSensor(
-                    task_id = "kafka_sensor_%s"%i,
-                    topic = KAFKA_TOPIC,
-                    kafka_config={
-                        "bootstrap.servers": "%s:9092"%broker_id, 
-                        "group.id": KAFKA_GROUPID,
-                        "auto.offset.reset": "earliest",
-                    },
-                    broker_id=broker_id,
-                    max_messages=10000,  
-                    process_message_func=process_message,
-                    mode="reschedule",  
-                    poke_interval=10,   
-                    timeout=600
-                )
+                #kafka_sensor_task = ConfluentKafkaSensor(
+                #    task_id = "kafka_sensor_%s"%i,
+                #    topic = KAFKA_TOPIC,
+                #    kafka_config={
+                #        "bootstrap.servers": "%s:9092"%broker_id, 
+                #        "group.id": KAFKA_GROUPID,
+                #        "auto.offset.reset": "earliest",
+                #    },
+                #    broker_id=broker_id,
+                #    max_messages=10000,  
+                #    process_message_func=process_message,
+                #    mode="reschedule",  
+                #    poke_interval=10,   
+                #    timeout=600
+                #)
     
-                kafka_sensor_task
+                #kafka_sensor_task
+                _kafka_config={
+                    "bootstrap.servers": "%s:9092"%broker_id, 
+                    "group.id": KAFKA_GROUPID,
+                    "auto.offset.reset": "earliest",
+                }
+                receivers(KAFKA_TOPIC, _kafka_config, broker_id, 10000)
+                
                 
         initialization() >> consumers_tasks
         
