@@ -334,7 +334,8 @@ with DAG(
                     process_message_func=process_message,
                     mode="reschedule",  
                     poke_interval=10,   
-                    timeout=840  
+                    timeout=840,
+                    task_timeout=timedelta(seconds=300)
                 )
     
                 kafka_sensor_task
