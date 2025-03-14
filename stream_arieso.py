@@ -325,7 +325,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
                     
         msg_obj = DECO_NSA.FromString(msg.value())
         msg_df_append = process_message(msg_obj, broker_id)
-        data_collected.append(_msg_df_append)
+        data_collected.append(msg_df_append)
                     
         message_count += 1
 
