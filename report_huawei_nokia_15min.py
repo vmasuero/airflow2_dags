@@ -118,7 +118,7 @@ def get_dates(ds=None, data_interval_start=None, data_interval_end=None, ti=None
 @task(
     executor_config={'LocalExecutor': {}},
 )
-def cooncat_files( ti=None,  **kwargs):
+def concat_files( ti=None,  **kwargs):
 
     _file_nokia = ti.xcom_pull(task_ids='get_dates', key='file_nokia')
     _file_huawei = ti.xcom_pull(task_ids='get_dates', key='file_huawei')
@@ -140,11 +140,19 @@ def cooncat_files( ti=None,  **kwargs):
     
     print("Reading file: %s"%_file_nokia)
     NOKIA_DF = read_parquet_s3(_s3_api, _file_nokia, BUCKET)
+    print('Tranforming to 15 min')
+    NOKIA_DF = NOKIA_DF\
+    .set_index(['TECH','SITE','CELL','ENODEID','PERIOD_START_TIME'])\
+    .groupby(level=['TECH','SITE','CELL','ENODEID'])\
+    .resample('15min', level='PERIOD_START_TIME').max().ffill()
+
+    NOKIA_DF.reset_index(inplace=True)
     NOKIA_DF['VENDOR'] = 'NOKIA'
     
     REPORT = pd.concat([NOKIA_DF,HUAWEI_DF])
+    del REPORT['ENODEID']
     REPORT['TECH'] = REPORT['TECH'].str.upper()
-    REPORT['ENODEID'] = pd.to_numeric(REPORT.ENODEID).fillna(0)
+    #REPORT['ENODEID'] = pd.to_numeric(REPORT.ENODEID).fillna(0)
     REPORT['VOL'] = REPORT['VOL'].fillna(0)
     REPORT['THRPUT'] = REPORT['THRPUT'].fillna(0)
     REPORT['CCUSERS'] = REPORT['CCUSERS'].fillna(0)
@@ -337,4 +345,4 @@ with DAG(
     max_active_runs=1
     ) as dag:
     
-        get_dates() >> check_s3_file() #>> cooncat_files()
+        get_dates() >> check_s3_file() #>> concat_files()

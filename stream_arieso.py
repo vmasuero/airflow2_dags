@@ -313,6 +313,7 @@ with DAG(
     schedule_interval='*/15 * * * *',
     start_date=days_ago(1),
     max_active_runs= 4,
+    "execution_timeout": timedelta(minutes=10),
     tags=['development', 'arieso', 'kafka'],
     catchup=False
     ) as dag:
@@ -335,8 +336,7 @@ with DAG(
                     process_message_func=process_message,
                     mode="reschedule",  
                     poke_interval=10,   
-                    timeout=840,
-                    task_timeout=timedelta(seconds=300)
+                    timeout=600
                 )
     
                 kafka_sensor_task
