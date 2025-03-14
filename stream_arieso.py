@@ -63,7 +63,7 @@ REQUIRED_COLS = [
     'segmentstarttime',
     'imsi',
     'ltestartcellname',
-    'minutesofuse',
+    #'minutesofuse',
     'nrcells_nrcelllabel',
     'nrcells_medianaveragersrp',
     'nrcells_durationms',
@@ -160,7 +160,7 @@ def process_message(msg_obj, broker_id:str) -> pd.DataFrame:
             'SegmentEndTime',
             'Imsi',
             'LteStartCellName',
-            'MinutesOfUse',
+            #'MinutesOfUse',
             'NrCells'
         ]
 
@@ -320,7 +320,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
             break
             
         if msg.error():
-            self.log.error("Consumer error: %s", msg.error())
+            print("Consumer error: %s", msg.error())
             continue
                     
         msg_obj = DECO_NSA.FromString(msg.value())
@@ -330,9 +330,9 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         message_count += 1
 
     if message_count >= max_messages:
-        self.log.info("MAX REACHED, Processed maximum number of messages: %s", max_messages)
+        print("MAX REACHED, Processed maximum number of messages: %s", max_messages)
     else:
-        self.log.info("Processed  messages: %s", message_count)
+        print("Processed  messages: %s", message_count)
         
     if len(data_collected) == 0:
         print('No info received')
