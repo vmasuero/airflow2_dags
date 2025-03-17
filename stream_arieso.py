@@ -193,7 +193,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         msg_sent = process_message(msg_obj, broker_id)
         
         if msg_sent == {}:
-            print(msg_obj)
+            print(msg.value())
             print('No data to upload')
             continue
         
