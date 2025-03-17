@@ -270,7 +270,7 @@ with DAG(
                 receivers(KAFKA_TOPIC, _kafka_config, broker_id, 10000)
                 
                 
-        initialization() #>> consumers_tasks
+        initialization() >> consumers_tasks
         
 if __name__ == "__main__":
     dag.cli()
