@@ -66,6 +66,8 @@ POSTGRES_ENGINE = create_engine(POSTGRES_EP, connect_args={'options': '-c statem
 
 DECO_NSA = Nsa5GAnalyticsStreamingDataFeed_pb2.Nsa5GAnalyticsStreamingFeedRecord()
 
+MAX_MESSAGES_RECEIVED = 1000000
+
 PRI_FIELDS = [
     'SegmentStartTime',
     'SegmentEndTime',
@@ -268,7 +270,7 @@ with DAG(
                     "group.id": KAFKA_GROUPID,
                     "auto.offset.reset": "earliest",
                 }
-                receivers(KAFKA_TOPIC, _kafka_config, broker_id, 10000)
+                receivers(KAFKA_TOPIC, _kafka_config, broker_id, MAX_MESSAGES_RECEIVED)
                 
                 
         initialization() >> consumers_tasks
