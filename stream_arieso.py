@@ -175,7 +175,6 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
     KAFKA_CONSUMER = Consumer(kafka_config)
     KAFKA_CONSUMER.subscribe([topic])
     
-    data_collected = []
     message_count = 0
         
     while message_count < max_messages:
@@ -203,8 +202,13 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         sql_values = [tuple(row.values()) for row in msg_sent]
         sql_query = f"INSERT INTO {sql_tablename} ({sql_columns}) VALUES ({sql_placeholders}) ON CONFLICT DO NOTHING"
 
-        POSTGRES_CURSOR.executemany(sql_query, sql_values)
-                    
+        try:
+            POSTGRES_CURSOR.executemany(sql_query, sql_values)
+        except psycopg2.errors.NumericValueOutOfRange as _excep:
+            print(_excep)
+            print(msg.value())
+            continue
+            
         message_count += 1
 
     if message_count >= max_messages:
