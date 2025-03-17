@@ -67,6 +67,7 @@ POSTGRES_ENGINE = create_engine(POSTGRES_EP, connect_args={'options': '-c statem
 DECO_NSA = Nsa5GAnalyticsStreamingDataFeed_pb2.Nsa5GAnalyticsStreamingFeedRecord()
 
 MAX_MESSAGES_RECEIVED = 1000000
+MAX_DURATION_MS = 50000000
 
 PRI_FIELDS = [
     'SegmentStartTime',
@@ -136,6 +137,10 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
             dict_append['nrcells_nrcelllabel'] = obj_nrcell.NrCellLabel
             dict_append['nrcells_medianaveragersrp'] = obj_nrcell.MedianAverageRsrp
             dict_append['nrcells_durationms'] = obj_nrcell.DurationMs
+            
+            if obj_nrcell.DurationMs > MAX_DURATION_MS:
+                print('Max Time Duration Ms')
+                return {}
 
             
             if ('nrerab' in _exist_fields) & (i == 0):
