@@ -66,11 +66,19 @@ POSTGRES_ENGINE = create_engine(POSTGRES_EP, connect_args={'options': '-c statem
 
 DECO_NSA = Nsa5GAnalyticsStreamingDataFeed_pb2.Nsa5GAnalyticsStreamingFeedRecord()
 
+PRI_FIELDS = [
+    'SegmentStartTime',
+    'SegmentEndTime',
+    'Imsi',
+    'NrCells',
+    'LteStartCellName'
+]
+
 REQUIRED_COLS = [
     'segmentstarttime',
     'imsi',
     'ltestartcellname',
-    #'minutesofuse',
+    'minutesofuse',
     'nrcells_nrcelllabel',
     'nrcells_medianaveragersrp',
     'nrcells_durationms',
@@ -84,10 +92,7 @@ REQUIRED_COLS = [
     'nrerab_overallaveragedownlinkthroughput'
 ]
 
-NRERAB_COLS = [x.replace('nrerab_','') for x in REQUIRED_COLS if 'nrerab' in x]
-
-
-
+PRI_FIELDS = [x.lower() for x in PRI_FIELDS]
 
 
 @task(
@@ -203,7 +208,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         print("MAX REACHED, Processed maximum number of messages: %s", max_messages)
     elif message_count > 0:
         print("Processed  messages: %s", message_count)
-     else:
+    else:
         print('No info received')
 
     POSTGRES_CONN.commit()
@@ -218,8 +223,23 @@ def initialization(ds=None, ti=None, **kwargs):
 
     print("TOPIC: %s"%KAFKA_TOPIC)
     print(ds)
- 
     
+    print('Chequing Postgress: %s'%POSTGRES_IP)
+    POSTGRES_CONN = psycopg2.connect(f"dbname={POSTGRES_DB} user={POSTGRES_USER} password={POSTGRES_PASS} host={POSTGRES_IP}")
+    POSTGRES_CURSOR = POSTGRES_CONN.cursor()
+
+    POSTGRES_CURSOR.execute("SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = %s);", (POSTGRES_DB,))
+    
+    db_exists = POSTGRES_CURSOR.fetchone()[0]
+
+    if db_exists:
+        print(f"Database {POSTGRES_DB} exists.")
+    else:
+        print(f"Database {POSTGRES_DB} does NOT exist.")  
+        
+    POSTGRES_CURSOR.close()
+    POSTGRES_CONN.close()
+        
     return True
     
 
@@ -250,7 +270,7 @@ with DAG(
                 receivers(KAFKA_TOPIC, _kafka_config, broker_id, 10000)
                 
                 
-        initialization() >> consumers_tasks
+        initialization() #>> consumers_tasks
         
 if __name__ == "__main__":
     dag.cli()
