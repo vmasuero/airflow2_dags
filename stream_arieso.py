@@ -205,9 +205,9 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         message_count += 1
 
     if message_count >= max_messages:
-        print("MAX REACHED, Processed maximum number of messages: %s", max_messages)
+        print("MAX REACHED, Processed maximum number of messages: %s"%max_messages)
     elif message_count > 0:
-        print("Processed  messages: %s", message_count)
+        print("Processed  messages: %s"%message_count)
     else:
         print('No info received')
 
@@ -249,7 +249,7 @@ with DAG(
         "depends_on_past": False,
         'owner': 'Vmasuero'
     },
-    schedule_interval='*/15 * * * *',
+    schedule_interval='*/5 * * * *',
     start_date=days_ago(1),
     max_active_runs= 4,
     dagrun_timeout=timedelta(minutes=10),
