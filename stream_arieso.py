@@ -1,32 +1,21 @@
 from airflow import DAG
-
-from datetime import datetime, timezone
-
-import pandas as pd
-
-from airflow.operators.python import PythonOperator
-from airflow.sensors.base import BaseSensorOperator
+#from airflow.operators.python import PythonOperator
+#from airflow.sensors.base import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
-from airflow.models import Variable
+#from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
-from datetime import datetime, timedelta
 
-from airflow.utils.dates import days_ago
-import re
 
 import psycopg2
-import pytz
-
-
 
 from confluent_kafka import Consumer, KafkaException
 from confluent_kafka.admin import AdminClient
 
 from sqlalchemy import create_engine
-from sqlalchemy.engine import reflection
-from sqlalchemy.exc import IntegrityError
+#from sqlalchemy.engine import reflection
+#from sqlalchemy.exc import IntegrityError
 
 
 import sys
@@ -102,6 +91,9 @@ PRI_FIELDS = [x.lower() for x in PRI_FIELDS]
     executor_config={'LocalExecutor': {}},
 )
 def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
+    import re
+    from datetime import datetime, timezone, timedelta
+
 
     def process_message(msg_obj, broker_id:str):
 
@@ -129,8 +121,10 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         ret_header['SegmentEndTime'] = msg_obj.SegmentEndTime
         ret_header['Imsi'] = msg_obj.Imsi
         ret_header['LteStartCellName'] = msg_obj.LteStartCellName
+        ret_header['MinutesOfUse'] = msg_obj.MinutesOfUse
+        
         ret_header['Longitude'] = msg_obj.Longitude
-        ret_header['latitude'] = msg_obj.Latitude
+        ret_header['Latitude'] = msg_obj.Latitude
 
         for i,obj_nrcell in enumerate(msg_obj.NrCells):
             dict_append = ret_header.copy()
