@@ -261,7 +261,7 @@ with DAG(
         "depends_on_past": False,
         'owner': 'Vmasuero'
     },
-    schedule_interval='*/5 * * * *',
+    schedule_interval='*/15 * * * *',
     start_date=days_ago(1),
     max_active_runs= 1,
     dagrun_timeout=timedelta(minutes=10),
