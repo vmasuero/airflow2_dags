@@ -7,6 +7,7 @@ from airflow.decorators import dag, task
 #from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
 
+from datetime import datetime, timezone, timedelta
 
 import psycopg2
 
@@ -92,7 +93,7 @@ PRI_FIELDS = [x.lower() for x in PRI_FIELDS]
 )
 def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
     import re
-    from datetime import datetime, timezone, timedelta
+    
 
 
     def process_message(msg_obj, broker_id:str):
