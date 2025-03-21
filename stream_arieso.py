@@ -259,7 +259,7 @@ with DAG(
     schedule_interval='*/15 * * * *',
     start_date=days_ago(1),
     max_active_runs= 1,
-    dagrun_timeout=timedelta(minutes=10),
+    dagrun_timeout=timedelta(minutes=30),
     tags=['development', 'arieso', 'kafka'],
     catchup=False
     ) as dag:
