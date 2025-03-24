@@ -37,7 +37,7 @@ PM_HUAWEI_SERVERS = [
 ]
 
 REMOTE_PATH = '/export/home/sysm/opt/oss/server/var/fileint/pm'
-HOURS_DELAY = 5
+HOURS_DELAY = 6
 
 SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
 ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
