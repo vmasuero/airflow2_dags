@@ -225,7 +225,7 @@ def upload_clickhouse(ti=None,  **kwargs):
     )
     
     _file_s3_traffic = ti.xcom_pull(task_ids='initialization', key='file_s3_traffic') 
-
+    print(f"Processing file: {_file_s3_traffic}")
        
     _data_traffic = read_parquet_from_s3(_file_s3_traffic, _s3_api)
        #_data_traffic = _data_traffic[ pd.notnull(_data_traffic.ifAlias)]
