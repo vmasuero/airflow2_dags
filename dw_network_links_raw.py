@@ -221,17 +221,18 @@ def upload_clickhouse(ti=None,  **kwargs):
         region_name=REGION,
         endpoint_url=ENDPOINT
     )
+    
+    _file_s3_traffic = ti.xcom_pull(task_ids='initialization', key='file_s3_traffic') 
 
-   _file_s3_traffic = ti.xcom_pull(task_ids='initialization', key='file_s3_traffic') 
+       
+    _data_traffic = read_parquet_from_s3(_file_s3_traffic, _s3_api)
+       #_data_traffic = _data_traffic[ pd.notnull(_data_traffic.ifAlias)]
+       #_data_traffic = _data_traffic[ _data_traffic.ifAlias.apply(filter_links) ]
+       #_data_traffic = proc_traffic(_data_traffic)
+       
+    print(_data_traffic)
 
-   _data_traffic = read_parquet_from_s3(_file_s3_traffic, _s3_api)
-   #_data_traffic = _data_traffic[ pd.notnull(_data_traffic.ifAlias)]
-   #_data_traffic = _data_traffic[ _data_traffic.ifAlias.apply(filter_links) ]
-   #_data_traffic = proc_traffic(_data_traffic)
-   
-   print(_data_traffic)
-   
-   return True
+    return True
         
 with DAG(
     dag_id='dw_network_links_raw',
