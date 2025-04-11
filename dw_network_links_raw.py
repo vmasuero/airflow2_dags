@@ -26,6 +26,7 @@ bucket_url = f'https://objectstorage.{REGION}.oraclecloud.com/n/{NAMESPACE}/b/{B
 
 
 # CLICKHOUSE
+SHARDS = 5
 CLICKHOUSE_IP = 'clickhouse-counters.clickhouse.svc.cluster.local' 
 CLICKHOUSE_IP_SHARDS = ['chi-counters-counters-%s-0.clickhouse.svc.cluster.local'%x for x in [x for x in range(SHARDS)]]
 
