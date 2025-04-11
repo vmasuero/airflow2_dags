@@ -161,7 +161,7 @@ def download_files(ti=None, **kwargs):
     print("Creando archivo temporal: %s"%_tmp_file.name)
 
     conn = SFTPHook(ftp_conn_id=PM_HUAWEI_SERVERS[0])
-    _regex = r'huawei_twamp_v01_\d+_%s\d+\.zip'%_date_prefix_by_day
+    _regex = r'huawei_twamp_v01_\d+_%s\d+(DST)?\.zip'%_date_prefix_by_day
     print('Regex: %s'%_regex)
     
     _remote_files = conn.list_directory(REMOTE_PATH)
@@ -261,7 +261,7 @@ def upload_clickhouse(ti=None, **kwargs):
     _date_prefix_by_day  = ti.xcom_pull(task_ids='get_dates', key='date_prefix_by_day')
 
     _filter = HUAWEI_FILES_PATH + "/huawei_twamp_v01_"
-    _regex = r'.*huawei_twamp_v01_\d+_%s\d+DST.zip'%_date_prefix_by_day
+    _regex = r'.*huawei_twamp_v01_\d+_%s\d+(DST)?.zip'%_date_prefix_by_day
 
     
     FILES = [x.key for x in bucket_cli.objects.filter(Prefix=_filter)  if re.match(_regex,x.key)]
