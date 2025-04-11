@@ -216,12 +216,12 @@ def upload_clickhouse(ti=None,  **kwargs):
         return _traffic_df
         
     
-    _s3_api = boto3.client(
-        's3',
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY,
-        region_name=REGION,
-        endpoint_url=ENDPOINT
+
+    _s3_api = boto3.resource('s3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT 
     )
     
     _file_s3_traffic = ti.xcom_pull(task_ids='initialization', key='file_s3_traffic') 
