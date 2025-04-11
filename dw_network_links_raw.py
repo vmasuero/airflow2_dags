@@ -10,6 +10,8 @@ from airflow.providers.sftp.hooks.sftp import SFTPHook
 from airflow.exceptions import AirflowException, AirflowFailException, AirflowSkipException
 from airflow.decorators import dag, task
 
+from io import StringIO,BytesIO
+
 
 SFTP_CONNECTION = 'DevOpsBandWidth'
 REMOTE_SFTP_PATH = '/files/traficoClaroVtr'
@@ -51,6 +53,7 @@ def read_parquet_from_s3(path:str, s3_api):
     
     return _df
     
+ 
 
 
 @task(
