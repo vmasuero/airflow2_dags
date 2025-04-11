@@ -3,6 +3,7 @@ import pendulum
 import os
 import re
 import boto3
+import pandas as pd
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -164,8 +165,7 @@ def download_files(ti=None,  **kwargs):
 )
 def upload_clickhouse(ti=None,  **kwargs):
 
-    import boto3
-    import pandas as pd
+
 
 
     def filter_links(desc:str):
