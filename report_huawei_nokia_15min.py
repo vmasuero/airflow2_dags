@@ -25,7 +25,7 @@ DIR_NOKIA = 'Nokia/Reports_60min'
 DIR_HUAWEI = 'Huawei/Reports_15min'
 DIR_OUT = 'Acceso_Movil/Reports_15min'
 
-VERSION = "8.0"
+VERSION = "8.1"
 
 def save_csv_s3(s3,data, bucket, path):
         
@@ -249,8 +249,8 @@ def concat_files( ti=None,  **kwargs):
     }
     print()
     print("Grouping All by Tech")
-    _report_all_tech = _report.groupby(['PERIOD_START_TIME','TECH'], group_keys=False).agg(REPORT_AGG_SITE_2)
-    _report_all_tech = _report_all_tech.groupby('TECH').resample('D', level=0).agg({'VOL':'sum','THRPUT':'max','CCUSERS':'sum'})
+    _report_all_tech = _report.groupby(['TECH','PERIOD_START_TIME'], group_keys=False).agg(REPORT_AGG_SITE_2)
+    _report_all_tech = _report_all_tech.groupby('TECH').resample('D', level='PERIOD_START_TIME').agg({'VOL':'sum','THRPUT':'max','USER_THRPUT': 'mean','CCUSERS':'max'})
     _report_all_tech.reset_index(inplace=True)
     _report_all_tech = _report_all_tech.drop('PERIOD_START_TIME', axis=1)
     _report_all_tech['TOTAL'] = 13
@@ -261,7 +261,7 @@ def concat_files( ti=None,  **kwargs):
     print()
     print("Grouping All")
     _report_all = _report.groupby(['PERIOD_START_TIME'], group_keys=False).agg(REPORT_AGG_SITE_2)
-    _report_all = _report_all.resample('D').agg({'VOL':'sum','THRPUT':'max','CCUSERS':'sum'})
+    _report_all = _report_all.resample('D').agg({'VOL':'sum','THRPUT':'max','USER_THRPUT': 'mean','CCUSERS':'max'})
     _report_all.reset_index(inplace=True)
     _report_all = _report_all.drop('PERIOD_START_TIME', axis=1)
     _report_all['TOTAL'] = 14

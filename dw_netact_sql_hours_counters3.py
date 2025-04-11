@@ -32,7 +32,7 @@ bucket_url = f'https://objectstorage.{REGION}.oraclecloud.com/n/{NAMESPACE}/b/{B
 
 CLUSTER_DASK_IP = 'dask-cluster-airflow-scheduler.dask-cluster:8786'
 
-HOURS_DELAY = 5
+HOURS_DELAY = 6
 DAYS_DELAY = 0
 
 NETACT_TABLES_COUNTERS = [
