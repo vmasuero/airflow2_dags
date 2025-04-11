@@ -4,6 +4,7 @@ import os
 import re
 import boto3
 import pandas as pd
+from random import randint
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -227,6 +228,13 @@ def upload_clickhouse(ti=None,  **kwargs):
         endpoint_url = ENDPOINT 
     )
     
+    _client_chi_cli = clickhouse_connect.get_client(
+        host = CLICKHOUSE_IP, 
+        database = DATABASE, 
+        user = CLICKHOUSE_USERNAME, 
+        password = CLICKHOUSE_PASSWORD
+    )
+        
     _file_s3_traffic = ti.xcom_pull(task_ids='initialization', key='file_s3_traffic') 
     print(f"Processing file: {_file_s3_traffic}")
        
@@ -235,8 +243,24 @@ def upload_clickhouse(ti=None,  **kwargs):
     _data_traffic = _data_traffic[ _data_traffic.ifAlias.apply(filter_links) ]
     _data_traffic = proc_traffic(_data_traffic)
        
-    print(_data_traffic)
+    print(f"Uploading: {_data_traffic.shape[0]}")
 
+
+    _sql_insert_df = "INSERT INTO %s.%s_DIST VALUES"%(DATABASE, TABLE)
+
+    _n_chunks = int(_data_traffic.shape[0] / 10000)
+    print(f"N CHUNKS: {_n_chunks}")
+
+    _data_traffic['chunk'] = [randint(0,_n_chunks-1) for x in _data_traffic.index]
+    
+    for k,v in _data_traffic.groupby('chunk'):
+        _client_chi_cli.insert_df(TABLE_DIST, v.drop('chunk', axis=1))
+        
+        if randint(0,20) == 5:
+            print("Sending Chunk: %s"%k)
+    
+    print(f"Chunks uploaded: {k}")
+    
     return True
         
 with DAG(
