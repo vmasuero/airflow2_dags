@@ -165,6 +165,7 @@ def download_files(ti=None, **kwargs):
     print('Regex: %s'%_regex)
     
     _remote_files = conn.list_directory(REMOTE_PATH)
+    print(_remote_files)
     _remote_files = [x for x in _remote_files if re.match(_regex,x)]
     
     if len(_remote_files) == 0:
