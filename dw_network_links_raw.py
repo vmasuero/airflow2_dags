@@ -14,6 +14,7 @@ from airflow.decorators import dag, task
 
 from io import StringIO,BytesIO
 
+import clickhouse_connect
 
 SFTP_CONNECTION = 'DevOpsBandWidth'
 REMOTE_SFTP_PATH = '/files/traficoClaroVtr'
