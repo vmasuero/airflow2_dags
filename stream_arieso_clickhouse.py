@@ -205,7 +205,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         msg_obj = DECO_NSA.FromString(msg.value())
         msgs_received = process_message(msg_obj, broker_id)
         
-        if msg_sent == {}:
+        if msgs_received == []:
             print(msg.value())
             print('No data to upload')
             continue
