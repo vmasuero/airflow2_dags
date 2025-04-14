@@ -249,7 +249,7 @@ def initialization(ds=None, ti=None, **kwargs):
     
     try:
         result = CLIENT_CH.command('SELECT 1')
-        print("ClickHouse is working:", result[0][0] == 1)
+        print("ClickHouse is working:", result)
     except Error as e:
         print("ClickHouse is not available:", e)
         
