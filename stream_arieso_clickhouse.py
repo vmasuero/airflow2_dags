@@ -203,19 +203,22 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
             continue
                     
         msg_obj = DECO_NSA.FromString(msg.value())
-        msg_sent = process_message(msg_obj, broker_id)
+        msgs_received = process_message(msg_obj, broker_id)
         
         if msg_sent == {}:
             print(msg.value())
             print('No data to upload')
             continue
         
-        _sql_rows = conv_dict_sql(msg_sent, TABLE_DIST, DATABASE)
+        
 
 
         try:
-            for _sql_row in _sql_rows:
+        
+            for msg_received in msgs_received:
+                _sql_row = conv_dict_sql(msg_received, TABLE_DIST, DATABASE)
                 CLIENT_CH.command(_sql_row)
+                
         except Error as ch_err:
             print(ch_err)
             print(msg.value())
