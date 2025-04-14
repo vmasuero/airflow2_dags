@@ -210,11 +210,12 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
             print('No data to upload')
             continue
         
-        _sql_row = conv_dict_sql(msg_sent, TABLE_DIST, DATABASE)
+        _sql_rows = conv_dict_sql(msg_sent, TABLE_DIST, DATABASE)
 
 
         try:
-            CLIENT_CH.command(_sql_row)
+            for _sql_row in _sql_rows:
+                CLIENT_CH.command(_sql_row)
         except Error as ch_err:
             print(ch_err)
             print(msg.value())
