@@ -248,7 +248,7 @@ def initialization(ds=None, ti=None, **kwargs):
     )
     
     try:
-        result = client.execute('SELECT 1')
+        result = CLIENT_CH.command('SELECT 1')
         print("ClickHouse is working:", result[0][0] == 1)
     except Error as e:
         print("ClickHouse is not available:", e)
