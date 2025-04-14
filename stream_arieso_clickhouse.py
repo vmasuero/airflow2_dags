@@ -240,21 +240,18 @@ def initialization(ds=None, ti=None, **kwargs):
     print("TOPIC: %s"%KAFKA_TOPIC)
     print(ds)
     
-    print('Chequing Postgress: %s'%POSTGRES_IP)
-    POSTGRES_CONN = psycopg2.connect(f"dbname={POSTGRES_DB} user={POSTGRES_USER} password={POSTGRES_PASS} host={POSTGRES_IP}")
-    POSTGRES_CURSOR = POSTGRES_CONN.cursor()
-
-    POSTGRES_CURSOR.execute("SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = %s);", (POSTGRES_DB,))
+    print('Chequing Postgress: %s'%CLICKHOUSE_IP)
+    CLIENT_CH = clickhouse_connect.get_client(
+        host= CLICKHOUSE_IP, 
+        username= CLICKHOUSE_USERNAME, 
+        password= CLICKHOUSE_PASSWORD
+    )
     
-    db_exists = POSTGRES_CURSOR.fetchone()[0]
-
-    if db_exists:
-        print(f"Database {POSTGRES_DB} exists.")
-    else:
-        print(f"Database {POSTGRES_DB} does NOT exist.")  
-        
-    POSTGRES_CURSOR.close()
-    POSTGRES_CONN.close()
+    try:
+        result = client.execute('SELECT 1')
+        print("ClickHouse is working:", result[0][0] == 1)
+    except Error as e:
+        print("ClickHouse is not available:", e)
         
     return True
     
