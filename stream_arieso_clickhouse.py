@@ -276,6 +276,7 @@ def initialization(ds=None, ti=None, data_interval_start=None,**kwargs):
    
 @task(
     executor_config={'LocalExecutor': {}},
+    trigger_rule='one_success'
 )
 def aggregate_day(ds=None, ti=None, **kwargs):   
 
