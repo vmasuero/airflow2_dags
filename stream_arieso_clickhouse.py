@@ -105,6 +105,8 @@ def conv_dict_sql(data:dict, table:str, database:str):
 @task(
     executor_config={'LocalExecutor': {}},
     pool='KAFKA_FEEDERS'
+    retries=2,                            
+    retry_delay=timedelta(minutes=2)
 )
 def receivers(topic, kafka_config, broker_id, max_messages, data_interval_start=None, **kwargs):
 
