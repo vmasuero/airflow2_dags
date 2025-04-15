@@ -193,13 +193,16 @@ def receivers(topic, kafka_config, broker_id, max_messages, data_interval_start=
     )
     
     message_count = 0
+    _start_time_now = datetime.utcnow()
         
     while message_count < max_messages:
-            
+        
+        _time_elapsed = (datetime.utcnow() - _start_time_now).total_seconds()
         if randint(1,1000) == 22:
-            print(f"message_count: {message_count} of {max_messages}")
+            print(f"message_count: {message_count} of {max_messages}   in {_time_elapsed} seconds elapsed")
             
         msg = KAFKA_CONSUMER.poll(timeout=5)  #5 segundos
+        
                 
         if msg is None:
             break
@@ -218,11 +221,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, data_interval_start=
             message_count += 1
             continue
         
-        
-
-
         try:
-        
             for msg_received in msgs_received:
                 _sql_row = conv_dict_sql(msg_received, TABLE_DIST, DATABASE)
                 CLIENT_CH.command(_sql_row)
@@ -297,7 +296,7 @@ with DAG(
     schedule_interval='*/15 * * * *',
     start_date=days_ago(1),
     max_active_runs= 1,
-    dagrun_timeout=timedelta(minutes=10),
+    dagrun_timeout=timedelta(minutes=30),
     tags=['development', 'arieso', 'kafka'],
     catchup=False
     ) as dag:
