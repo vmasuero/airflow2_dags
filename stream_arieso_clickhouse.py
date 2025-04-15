@@ -120,8 +120,8 @@ def receivers(topic, kafka_config, broker_id, max_messages, data_interval_start=
         _exist_fields = [x[0].name.lower() for x in msg_obj.ListFields()]
            
         if not all([x in _exist_fields for x in PRI_FIELDS]):
-            print("Missing:")
-            print([x  for x in PRI_FIELDS if x not in _exist_fields])
+            #print("Missing:")
+            #print([x  for x in PRI_FIELDS if x not in _exist_fields])
             return {}
 
         if not re.match(r'^\d\d.*', msg_obj.LteStartCellName.lower()):
