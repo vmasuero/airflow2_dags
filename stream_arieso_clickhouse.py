@@ -279,7 +279,7 @@ def initialization(ds=None, ti=None, **kwargs):
 )
 def aggregate_day(ds=None, ti=None, **kwargs):   
 
-     _hour_oper = ti.xcom_pull(task_ids='initialization', key='hour_oper') 
+    _hour_oper = ti.xcom_pull(task_ids='initialization', key='hour_oper') 
 
     if _hour_oper < 23:
         print('Wating for end of the day')
