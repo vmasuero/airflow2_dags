@@ -3,8 +3,8 @@ from airflow import DAG
 from airflow.utils.decorators import apply_defaults
 from airflow.utils.dates import days_ago
 from airflow.decorators import dag, task
-#from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
+from airflow.exceptions import AirflowException, AirflowSkipException
 
 from random import randint
 
