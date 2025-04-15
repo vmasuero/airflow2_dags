@@ -247,7 +247,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, data_interval_start=
 @task(
     executor_config={'LocalExecutor': {}},
 )
-def initialization(ds=None, ti=None, **kwargs):
+def initialization(ds=None, ti=None, data_interval_start=None,**kwargs):
 
 
     print("Yesteraday Date in RAW version: %s "%data_interval_start)
