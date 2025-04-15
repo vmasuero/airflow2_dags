@@ -104,7 +104,7 @@ def conv_dict_sql(data:dict, table:str, database:str):
 
 @task(
     executor_config={'LocalExecutor': {}},
-    pool='KAFKA_FEEDERS'
+    pool='KAFKA_FEEDERS',
     retries=2,                            
     retry_delay=timedelta(minutes=2)
 )
