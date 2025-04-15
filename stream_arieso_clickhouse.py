@@ -6,6 +6,8 @@ from airflow.decorators import dag, task
 #from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
 
+from random import randint
+
 from datetime import datetime, timezone, timedelta
 
 import psycopg2
@@ -104,7 +106,7 @@ def conv_dict_sql(data:dict, table:str, database:str):
     executor_config={'LocalExecutor': {}},
     pool='KAFKA_FEEDERS'
 )
-def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
+def receivers(topic, kafka_config, broker_id, max_messages, data_interval_start=None, **kwargs):
 
     
 
@@ -194,6 +196,9 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         
     while message_count < max_messages:
             
+        if randint(1,1000) == 22:
+            print(f"message_count: {message_count} of {max_messages}")
+            
         msg = KAFKA_CONSUMER.poll(timeout=5)  #5 segundos
                 
         if msg is None:
@@ -201,6 +206,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
             
         if msg.error():
             print("Consumer error: %s", msg.error())
+            message_count += 1
             continue
                     
         msg_obj = DECO_NSA.FromString(msg.value())
@@ -209,6 +215,7 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
         if msgs_received == []:
             print(msg.value())
             print('No data to upload')
+            message_count += 1
             continue
         
         
@@ -242,6 +249,11 @@ def receivers(topic, kafka_config, broker_id, max_messages, **kwargs):
 )
 def initialization(ds=None, ti=None, **kwargs):
 
+
+    print("Yesteraday Date in RAW version: %s "%data_interval_start)
+    _date_oper = data_interval_start
+    _hour_oper = _date_oper.hour
+
     print("TOPIC: %s"%KAFKA_TOPIC)
     print(ds)
     
@@ -258,8 +270,22 @@ def initialization(ds=None, ti=None, **kwargs):
     except Error as e:
         print("ClickHouse is not available:", e)
         
-    return True
+    ti.xcom_push(key='hour_oper', value=_hour_oper)
     
+    return True
+   
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def aggregate_day(ds=None, ti=None, **kwargs):   
+
+     _hour_oper = ti.xcom_pull(task_ids='initialization', key='hour_oper') 
+
+    if _hour_oper < 23:
+        print('Wating for end of the day')
+        raise AirflowSkipException('Wating for final of the day')
+        
+    return True
 
 with DAG(
     dag_id='stream_arieso_clickhouse',
@@ -288,7 +314,7 @@ with DAG(
                 receivers(KAFKA_TOPIC, _kafka_config, broker_id, MAX_MESSAGES_RECEIVED)
                 
                 
-        initialization() >> consumers_tasks
+        initialization() >> consumers_tasks >> aggregate_day()
         
 if __name__ == "__main__":
     dag.cli()
