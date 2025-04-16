@@ -203,9 +203,13 @@ def receivers(topic, kafka_config, broker_id, max_messages, data_interval_start=
         if randint(1,1000) == 22:
             print(f"message_count: {message_count} of {max_messages}   in {_time_elapsed} seconds elapsed")
             
-        msg = KAFKA_CONSUMER.poll(timeout=5)  #5 segundos
+        msg = KAFKA_CONSUMER.poll(timeout=1)  #1 segundo
         
-                
+        
+        if _time_elapsed > (10*60): # 10 minutos
+            print('Timeout receiving messages')
+            break
+            
         if msg is None:
             break
             
