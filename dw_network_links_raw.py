@@ -201,7 +201,7 @@ def upload_clickhouse(ti=None,  **kwargs):
         _traffic_df = _traffic_df[_traffic_df.ifadmin == 1]
         _traffic_df = _traffic_df[_traffic_df.ifoper == 1]
         
-        _traffic_df['datetime'] = pd.to_datetime(_traffic_df['time'], format='%Y-%m-%d %H:%M:%S').dt.tz_localize('America/Santiago')
+        _traffic_df['datetime'] = pd.to_datetime(_traffic_df['time'], format='%Y-%m-%d %H:%M:%S').dt.tz_localize('America/Santiago', ambiguous=True)
 
         _traffic_df['devif'] = pd.to_numeric(_traffic_df['devif'])
         _traffic_df['input'] = (pd.to_numeric(_traffic_df['input']) )
