@@ -2,14 +2,10 @@ from airflow import DAG
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowException, AirflowFailException, AirflowSkipException
 
-
-
-import pendulum
 from datetime import datetime, timedelta
-from random import randint
+import pendulum
+import boto3
 import pandas as pd
-import re
-import hashlib
 
 S3_PATH = 'NETWORK_COUNTERS/OYM'
 
@@ -32,6 +28,25 @@ def read_parquet_from_s3(path:str, s3_api):
     return _df
     
 
+def file_exists(bucket_name, key):
+    
+    _s3 = boto3.client(
+        's3',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+        region_name=REGION,
+        endpoint_url=ENDPOINT
+    )
+
+    try:
+        _s3.head_object(Bucket=bucket_name, Key=key)
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            return False
+    
+    return False
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
@@ -49,6 +64,13 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     _file_s3_traffic = "%s/%s"%(_output_dir, _file_traffic)
     _file_s3_devifs = "%s/%s"%(_output_dir, _file_devifs)
+    
+    
+    if not file_exists(BUCKET, _file_s3_traffic):
+        raise AirflowFailException("file not in S3: %s"%_file_s3_traffic)
+    else:
+        print("File %s exist en S3"%_file_s3_traffic)
+    
     
     ti.xcom_push(key='output_dir', value=_output_dir)
     ti.xcom_push(key='file_s3_traffic', value=_file_s3_traffic)
