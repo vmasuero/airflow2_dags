@@ -274,14 +274,12 @@ def generate_deltas(ti=None,  **kwargs):
 
     import boto3
     
-    _s3 = boto3.client(
-        's3',
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY,
-        region_name=REGION,
-        endpoint_url=ENDPOINT
+    _s3 = boto3.resource('s3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT 
     )
-
 
 
     file_current_devif = ti.xcom_pull(task_ids='initialization', key='file_s3_devifs')  
