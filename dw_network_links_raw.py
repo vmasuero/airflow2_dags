@@ -164,6 +164,7 @@ def download_files(ti=None,  **kwargs):
 
 @task(
     executor_config={'LocalExecutor': {}},
+    pool= 'CLICKHOUSE_POOL'
 )
 def upload_clickhouse(ti=None,  **kwargs):
 
@@ -183,7 +184,9 @@ def upload_clickhouse(ti=None,  **kwargs):
             r'#mpls.*',
             r'#tv.*',
             r'#iptv.*',
-            r'cache.*'
+            r'.*cache.*',
+            r'.*pe\d+.*',
+            r'.*ink_[a-z]+_\d+.*'
         ]
         
         for _reg in _regular_exps:          
@@ -263,6 +266,46 @@ def upload_clickhouse(ti=None,  **kwargs):
     print(f"Chunks uploaded: {k}")
     
     return True
+    
+ @task(
+    executor_config={'LocalExecutor': {}},
+)
+def generate_deltas(ti=None,  **kwargs): 
+
+    import boto3
+    
+    _s3 = boto3.client(
+        's3',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+        region_name=REGION,
+        endpoint_url=ENDPOINT
+    )
+
+
+
+    file_current_devif = ti.xcom_pull(task_ids='initialization', key='file_s3_devifs')  
+    date_current_devif = pd.to_datetime( file_current_devif.split('/')[-1].split('_')[0], format='%Y%m%d')
+    
+    
+    files = pd.DataFrame([x.key for x in  _s3.Bucket(BUCKET).objects.filter(Prefix=S3_PATH) if 'Devifs' in x.key]).rename(columns={0:'path'})
+    files['file'] = files.path.apply(lambda x: x.split('/')[-1] )
+    files = files.join(files.file.str.extract(r'(\d\d\d\d)(\d\d)(\d\d)_ClaroVtr.*').rename(columns={0:'year',1:'month',2:'day'}).astype(int))
+    files['date_f'] = files.apply(lambda x: datetime(x.year,x.month,x.day), axis=1)
+    files = files.sort_values(by='date_f')
+    files = files[ files.date_f < date_current_devif]
+    files = files[ files.date_f == files.date_f.max()]
+    
+    flie_last_devif = files.path.iloc[0]
+    
+    print(f"Current File: {file_current_devif}")
+    print(f"Last File: {flie_last_devif}")
+    
+    return True
+
+
+    
+
         
 with DAG(
     dag_id='dw_network_links_raw',
@@ -280,4 +323,4 @@ with DAG(
 ) as dag:
 
    
-    initialization() >> check_files() >> download_files() >> upload_clickhouse()
+    initialization() >> check_files() >> download_files() >> upload_clickhouse() >> generate_deltas()
