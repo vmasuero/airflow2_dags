@@ -267,7 +267,7 @@ def upload_clickhouse(ti=None,  **kwargs):
     
     return True
     
- @task(
+@task(
     executor_config={'LocalExecutor': {}},
 )
 def generate_deltas(ti=None,  **kwargs): 
