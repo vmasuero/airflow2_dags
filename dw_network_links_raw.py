@@ -19,6 +19,7 @@ import clickhouse_connect
 SFTP_CONNECTION = 'DevOpsBandWidth'
 REMOTE_SFTP_PATH = '/files/traficoClaroVtr'
 S3_PATH = 'NETWORK_COUNTERS/OYM'
+S3_PATH_DELTAS = 'NETWORK_COUNTERS/OYM_DELTAS'
 
 SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
 ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
@@ -67,6 +68,17 @@ def read_parquet_s3( s3_api, path:str, bucket:str, cols=[]):
             _df = pd.read_parquet(buffer_fd)
 
     return _df 
+
+
+def upload_parquet_s3(data:pd.DataFrame, filename:str, s3_api):
+
+    _parquet_buffer = BytesIO()
+    data.to_parquet(_parquet_buffer)
+    
+    _res = s3_api.Object(BUCKET, filename).put(Body=_parquet_buffer.getvalue())
+    
+    return list(_res.items())[0][1]['HTTPStatusCode'] == 200
+
 
 
 @task(
@@ -373,8 +385,12 @@ def generate_deltas(ti=None,  **kwargs):
     COMP_DF = COMP_DF[~COMP_DF.repeated]
     COMP_DF = COMP_DF.reset_index(drop=True)
    
-
     print(COMP_DF.sample(5))
+    
+    _file_s3_delta = S3_PATH_DELTAS+'/Devifs_'+date_current_devif.strftime('%Y%m%d')+"_delta.parquet"
+    print("Uploading to: %s"%_file_s3_delta)
+    upload_parquet_s3(COMP_DF, _file_s3_delta, _s3)
+    
     
     return True
 
