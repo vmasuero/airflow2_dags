@@ -56,7 +56,17 @@ def read_parquet_from_s3(path:str, s3_api):
     
     return _df
     
- 
+def read_parquet_s3( s3_api, path:str, bucket:str, cols=[]):
+    obj_buffer = s3_api.Object(bucket, path)
+
+    with BytesIO(obj_buffer.get()['Body'].read()) as buffer_fd:
+        
+        if len(cols) > 0:
+            _df = pd.read_parquet(buffer_fd, columns=cols)
+        else:
+            _df = pd.read_parquet(buffer_fd)
+
+    return _df 
 
 
 @task(
@@ -300,7 +310,7 @@ def generate_deltas(ti=None,  **kwargs):
     
     def read_df(s3_api, path, bucket):
         print(f"Reading Devices File {path}")
-        _df = read_parquet_from_s3(path, s3_api) #read_parquet_s3(s3_api, path, bucket) 
+        _df = read_parquet_s3( s3_api, path, bucket):
         
         _df = _df[ _df.ifalias.apply(lambda x: len(x) > 20) ]
         _df = _df[ _df.ifadmin == 1]
@@ -316,7 +326,7 @@ def generate_deltas(ti=None,  **kwargs):
         print(f"Reading Traffic File {_path_traffic}")
 
 
-        _df_cap = read_parquet_from_s3(s3_api, _path_traffic, bucket, cols=['devif','ifspeed'])
+        _df_cap = read_parquet_s3(s3_api, _path_traffic, bucket, cols=['devif','ifspeed'])
         _df_cap = _df_cap[['devif','ifspeed']].groupby('devif').max()/1000000
         _df_cap = _df_cap.rename(columns={'ifspeed':'capacidad_Gbps'})
         
