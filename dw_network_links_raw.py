@@ -274,6 +274,33 @@ def generate_deltas(ti=None,  **kwargs):
 
     import boto3
     
+    def read_df(s3_api, path, bucket):
+        print(f"Reading Devices File {path}")
+        _df = read_parquet_s3(s3_api, path, bucket)
+        
+        _df = _df[ _df.ifalias.apply(lambda x: len(x) > 20) ]
+        _df = _df[ _df.ifadmin == 1]
+        _df = _df[ _df.ifoper == 1]
+        _df = _df[['operador','devname','ifname','ifalias','devif']]
+        _df = _df[ filter_rows(_df.ifalias.str.lower()) ]
+        _df = _df[ ~_df.ifname.str.match(r'.*\.\d+$')]
+        _df.devname = _df.devname.str.split('.').apply(lambda x: x[0]) 
+        _df = _df.set_index('devif')
+
+
+        _path_traffic = path.replace('Devifs','Traffic_v2')
+        print(f"Reading Traffic File {_path_traffic}")
+
+
+        _df_cap = read_parquet_s3(s3_api, _path_traffic, bucket, cols=['devif','ifspeed'])
+        _df_cap = _df_cap[['devif','ifspeed']].groupby('devif').max()/1000000
+        _df_cap = _df_cap.rename(columns={'ifspeed':'capacidad_Gbps'})
+        
+        _df = _df.join(_df_cap, how='left')
+        _df['date_f'] = pd.to_datetime( path.split('/')[-1].split('_')[0], format='%Y%m%d')
+        
+        return _df
+    
     _s3 = boto3.resource('s3',
         aws_access_key_id = ACCESS_KEY,
         aws_secret_access_key = SECRET_KEY,
@@ -298,6 +325,22 @@ def generate_deltas(ti=None,  **kwargs):
     
     print(f"Current File: {file_current_devif}")
     print(f"Last File: {flie_last_devif}")
+    
+    CURRENT_DF = read_df(_s3, file_current_devif, BUCKET )
+    CURRENT_DF['status'] = 'NEW'
+    
+    LAST_DF = read_df(_s3, flie_last_devif, BUCKET )
+    LAST_DF['status'] = 'DELETE'
+
+    print('Copiling both files')
+    COMP_DF = pd.concat([CURRENT_DF,LAST_DF])
+    COMP_DF['check'] = COMP_DF.ifalias.str.replace(r'[^a-zA-Z0-9]', '', regex=True).str.lower()
+    COMP_DF['repeated'] = COMP_DF.groupby(level=0)['check'].transform(lambda x: x.duplicated(keep=False))
+    COMP_DF = COMP_DF[~COMP_DF.repeated]
+    COMP_DF = COMP_DF.reset_index(drop=True)
+   
+
+    print(COMP_DF.sample(5))
     
     return True
 
