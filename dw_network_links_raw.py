@@ -391,6 +391,8 @@ def generate_deltas(ti=None,  **kwargs):
     print("Uploading to: %s"%_file_s3_delta)
     upload_parquet_s3(COMP_DF, _file_s3_delta, _s3)
     
+    ti.xcom_push(key='file_s3_delta', value=_file_s3_delta)
+    
     
     return True
 
