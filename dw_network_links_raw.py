@@ -274,6 +274,30 @@ def generate_deltas(ti=None,  **kwargs):
 
     import boto3
     
+    def filter_rows(data:pd.Series):
+    
+        _regular_exps = [
+                    r'.*link_[a-z]+_\d+.*',
+                    r'.*bbolt_.*',
+                    r'#ssip.*',
+                    r'#isp.*',
+                    r'#acceso.*',
+                    r'#ntwk.*',
+                    r'#mpls.*',
+                    r'#tv.*',
+                    r'#iptv.*',
+                    r'.*cache.*',
+                    r'.*pe\d+.*',
+                    r'.*ink_[a-z]+_\d+.*',
+                ]
+        
+        _f = pd.Series()
+        
+        for _reg in _regular_exps:
+            _f = _f | data.str.match(_reg) if len(_f) > 0 else data.str.match(_reg)
+
+        return _f
+    
     def read_df(s3_api, path, bucket):
         print(f"Reading Devices File {path}")
         _df = read_parquet_from_s3(path, s3_api) #read_parquet_s3(s3_api, path, bucket) 
