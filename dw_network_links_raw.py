@@ -360,6 +360,7 @@ def generate_deltas(ti=None,  **kwargs):
     
     
     files = pd.DataFrame([x.key for x in  _s3.Bucket(BUCKET).objects.filter(Prefix=S3_PATH) if 'Devifs' in x.key]).rename(columns={0:'path'})
+    files = files[files.path.str.match(r'.*\d+_ClaroVtr_Devifs.parquet$')]
     files['file'] = files.path.apply(lambda x: x.split('/')[-1] )
     files = files.join(files.file.str.extract(r'(\d\d\d\d)(\d\d)(\d\d)_ClaroVtr.*').rename(columns={0:'year',1:'month',2:'day'}).astype(int))
     files['date_f'] = files.apply(lambda x: datetime(x.year,x.month,x.day), axis=1)
@@ -387,7 +388,7 @@ def generate_deltas(ti=None,  **kwargs):
    
     print(COMP_DF.sample(5))
     
-    _file_s3_delta = S3_PATH_DELTAS+'/Devifs_'+date_current_devif.strftime('%Y%m%d')+"_delta.parquet"
+    _file_s3_delta = S3_PATH_DELTAS +'/'+date_current_devif.strftime('%Y%m%d')+"_ClaroVtr_Devifs_Delta.parquet"
     print("Uploading to: %s"%_file_s3_delta)
     upload_parquet_s3(COMP_DF, _file_s3_delta, _s3)
     
