@@ -316,7 +316,7 @@ def generate_deltas(ti=None,  **kwargs):
         print(f"Reading Traffic File {_path_traffic}")
 
 
-        _df_cap = read_parquet_s3(s3_api, _path_traffic, bucket, cols=['devif','ifspeed'])
+        _df_cap = read_parquet_from_s3(s3_api, _path_traffic, bucket, cols=['devif','ifspeed'])
         _df_cap = _df_cap[['devif','ifspeed']].groupby('devif').max()/1000000
         _df_cap = _df_cap.rename(columns={'ifspeed':'capacidad_Gbps'})
         
