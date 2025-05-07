@@ -386,7 +386,6 @@ def generate_deltas(ti=None,  **kwargs):
     COMP_DF = COMP_DF[~COMP_DF.repeated]
     COMP_DF = COMP_DF.reset_index(drop=True)
    
-    print(COMP_DF.sample(5))
     
     _file_s3_delta = S3_PATH_DELTAS +'/'+date_current_devif.strftime('%Y%m%d')+"_ClaroVtr_Devifs_Delta.parquet"
     print("Uploading to: %s"%_file_s3_delta)
