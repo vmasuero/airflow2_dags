@@ -276,7 +276,7 @@ def generate_deltas(ti=None,  **kwargs):
     
     def read_df(s3_api, path, bucket):
         print(f"Reading Devices File {path}")
-        _df = read_parquet_s3(s3_api, path, bucket)
+        _df = read_parquet_from_s3(path, s3_api) #read_parquet_s3(s3_api, path, bucket) 
         
         _df = _df[ _df.ifalias.apply(lambda x: len(x) > 20) ]
         _df = _df[ _df.ifadmin == 1]
