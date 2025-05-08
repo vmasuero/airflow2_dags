@@ -291,6 +291,7 @@ def upload_clickhouse(ti=None,  **kwargs):
     
 @task(
     executor_config={'LocalExecutor': {}},
+    pool= 'CLICKHOUSE_POOL'
 )
 def generate_deltas(ti=None,  **kwargs): 
 
@@ -384,9 +385,7 @@ def generate_deltas(ti=None,  **kwargs):
     COMP_DF['check'] = COMP_DF.ifalias.str.replace(r'[^a-zA-Z0-9]', '', regex=True).str.lower()
     COMP_DF['repeated'] = COMP_DF.groupby(level=0)['check'].transform(lambda x: x.duplicated(keep=False))
     COMP_DF = COMP_DF[~COMP_DF.repeated]
-    COMP_DF = COMP_DF.reset_index(drop=True)
-   
-    print(COMP_DF.sample(5))
+     
     
     _file_s3_delta = S3_PATH_DELTAS +'/'+date_current_devif.strftime('%Y%m%d')+"_ClaroVtr_Devifs_Delta.parquet"
     print("Uploading to: %s"%_file_s3_delta)
