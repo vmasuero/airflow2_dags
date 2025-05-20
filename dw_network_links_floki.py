@@ -88,7 +88,6 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
 def test_proxy(**kwargs):
     
     proxy_server = Variable.get("PROXY_CORP")
-    proxy_server = "10.36.13.147:3128"
     
     proxy = {
         "http": proxy_server,
@@ -99,7 +98,7 @@ def test_proxy(**kwargs):
     print(proxy)
     
     try:
-        response = requests.get(FLOKI_TEST_PAGE, proxies=proxy, timeout=10)
+        response = requests.get(URL_API, proxies=PROXY_PARAMS, timeout=10)
         print(response)
         print("Proxy works! Your IP is:", response.json()["origin"])
     except requests.exceptions.RequestException as e:
