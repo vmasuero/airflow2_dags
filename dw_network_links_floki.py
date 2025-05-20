@@ -103,9 +103,9 @@ def test_proxy(**kwargs):
         response = requests.get(URL_API, proxies=PROXY_PARAMS)
         print(f"Testing: {URL_API}")
         print(response.status_code )
-
-        print("Proxy works! Your IP is:", response.json()["origin"])
-
+        print(response.header )
+        print(response)
+    
     except requests.exceptions.RequestException as e:
         print("Proxy failed:", e)
         raise AirflowFailException('Fail form Server Floki')
