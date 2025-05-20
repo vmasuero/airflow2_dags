@@ -40,7 +40,7 @@ FILTER_TAB = [
     #'PEERING INT',
     #'SW-HFC-ACCESO',
     #'MOVIL-PE',
-    #'SWITCH CORP - PLAN',
+    'SWITCH CORP - PLAN',
     #'RED MPLS CORPORACIONES'
 ]
 
