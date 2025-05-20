@@ -16,7 +16,10 @@ URL_API = 'http://200.27.26.27/cgi-bin/reporte_diario.pl'
 
 
 PROXY_PARAMS = {
-    "http":"http://10.36.13.147:3128"
+    "http":"http://10.36.13.147:3128",
+    "https":"http://10.36.13.147:3128",
+
+    
 }
 
 FLOKI_TEST_PAGE = "http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2023&mes=12&dia=23&tab=CORE%20INT."
