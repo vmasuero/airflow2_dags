@@ -9,6 +9,7 @@ from airflow import DAG
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowException, AirflowFailException, AirflowSkipException
 from airflow.utils.task_group import TaskGroup
+from airflow.sdk import Variable
 
 URL_API = 'http://200.27.26.27/cgi-bin/reporte_diario.pl'
 #http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2023&mes=12&dia=23&tab=CORE%20INT.
@@ -76,6 +77,22 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
     
     return True
  
+ 
+
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def test_proxy(**kwargs):
+    
+    proxy_server = foo = Variable.get("PROXY_CORP")
+    
+    print("Check Proxy Server")
+    print(proxy_server)
+    
+    return True
+    
+    
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
@@ -145,4 +162,4 @@ with DAG(
             _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
             dw_files(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
    
-    initialization() >> tasks_dw_floki
+    initialization() >> test_proxy() #tasks_dw_floki
