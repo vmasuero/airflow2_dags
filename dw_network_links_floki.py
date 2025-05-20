@@ -19,7 +19,7 @@ PROXY_PARAMS = {
     "http":"http://10.36.13.147:3128"
 }
 
-FLOKI_TEST_PAGE = 'http://200.27.26.27'
+FLOKI_TEST_PAGE = "http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2023&mes=12&dia=23&tab=CORE%20INT."
 
 
 FILTER_TAB = [
@@ -95,10 +95,10 @@ def test_proxy(**kwargs):
     }
     
     print("Check Proxy Server")
-    print(proxy)
+    print(PROXY_PARAMS)
     
     try:
-        response = requests.get(URL_API, proxies=PROXY_PARAMS, timeout=10)
+        response = requests.get(FLOKI_TEST_PAGE, proxies=PROXY_PARAMS, timeout=10)
         print(response)
         print("Proxy works! Your IP is:", response.json()["origin"])
     except requests.exceptions.RequestException as e:
