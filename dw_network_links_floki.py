@@ -22,7 +22,7 @@ PROXY_PARAMS = {
     
 }
 
-FLOKI_TEST_PAGE = "http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2025&mes=5&dia=1&tab=CORE%20INT."
+FLOKI_TEST_PAGE = "http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2025&mes=05&dia=19&tab=IPRAN"
 
 
 FILTER_TAB = [
