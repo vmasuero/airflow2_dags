@@ -22,7 +22,7 @@ PROXY_PARAMS = {
     
 }
 
-FLOKI_TEST_PAGE = "http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2023&mes=12&dia=23&tab=CORE%20INT."
+FLOKI_TEST_PAGE = "http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2025&mes=5&dia=1&tab=CORE%20INT."
 
 
 FILTER_TAB = [
@@ -102,6 +102,7 @@ def test_proxy(**kwargs):
     
     try:
         response = requests.get(FLOKI_TEST_PAGE, proxies=PROXY_PARAMS)
+        print(FLOKI_TEST_PAGE)
         print(response)
         print(response.status_code )
 
