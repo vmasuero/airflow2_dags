@@ -98,6 +98,7 @@ def test_proxy(**kwargs):
     
     try:
         response = requests.get(FLOKI_TEST_PAGE, proxies=proxy, timeout=10)
+        print(response)
         print("Proxy works! Your IP is:", response.json()["origin"])
     except requests.exceptions.RequestException as e:
         print("Proxy failed:", e)
