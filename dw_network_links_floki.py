@@ -13,6 +13,7 @@ from airflow.utils.task_group import TaskGroup
 from airflow.models import Variable
 
 URL_API = 'http://200.27.26.27/cgi-bin/reporte_diario.pl'
+URL_LIST_ELEMS = 'http://200.27.26.27/cgi-bin/listaElementos.pl'
 #http://200.27.26.27/cgi-bin/reporte_diario.pl?ano=2023&mes=12&dia=23&tab=CORE%20INT.
 
 
@@ -45,6 +46,7 @@ FILTER_TAB = [
 ]
 
 S3_PATH = 'NETWORK_COUNTERS/FLOKI'
+S3_PATH_LINKS = 'NETWORK_COUNTERS/FLOKI_LINKS'
 
 SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
 ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
@@ -70,6 +72,15 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
         str(_time_start.year)
     )
 
+    _output_file_elements = "%s/%s/floki_elements_%s%s%s.csv"%(
+        S3_PATH_LINKS,
+        str(_time_start.year),
+        str(_time_start.year),
+        str(_time_start.month).zfill(2),
+        str(_time_start.day).zfill(2)
+    )
+
+
     _url_floki = "%s?ano=%s&mes=%s&dia=%s"%(
         URL_API,
         str(_time_start.year),
@@ -89,6 +100,7 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
 
     ti.xcom_push(key='url_floki', value=_url_floki)
     ti.xcom_push(key='output_directory', value=_output_directory)
+    ti.xcom_push(key='output_file_elements', value=_output_file_elements)
     ti.xcom_push(key='Date Prefix', value=_date_prefix)
     
     return True
@@ -182,6 +194,65 @@ def dw_files_upload_s3(tab_floki:str, ti=None,  **kwargs):
     return True
 
  
+ 
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def get_list_elements(ti=None, ds=None, **kwargs):
+
+
+    def save_csv_s3(s3,data, bucket, path):
+            
+        _buffer = BytesIO()
+        
+        data.to_csv(_buffer, compression = "gzip", sep=";", index=False)
+        _buffer.seek(0)
+        
+        _res = s3.Object(bucket, path).put(Body=_buffer.getvalue())
+        
+        return list(_res.items())[0][1]['HTTPStatusCode'] == 200
+
+    _s3_api = boto3.resource('s3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT 
+    )
+    
+    _output_file_elements = ti.xcom_pull(task_ids="initialization", key="output_file_elements")
+
+    
+    _res = requests.get(url, proxies=PROXY_PARAMS)
+    
+    if _req.status_code != 200:
+        raise AirflowFailException("Codigo de error recibido %s"%str(_req.status_code))
+        
+    _content = _res.content.decode().split('\n')
+    
+    if len(_content) < 10:
+        print('Error retrieving list of files')
+        print(_content[:5])
+        return AirflowFailException("Content received too small")
+            
+
+    
+    _headers = _content[0].split(';')
+    _data = [x.split(';') for x in _content[1:] if len(x.split(';')) == 6]
+    
+    _df = pd.DataFrame(_data, columns=_headers)
+    _df = _df[~_df.duplicated()].reset_index(drop=True)
+    _df = _df[['Equipo', 'Puerta', 'Descripcion', 'Pestana']]
+
+    print("Saving last file in: %s"%_output_file_elements)
+    save_csv_s3(_s3_api, _df, BUCKET, _output_file_elements)
+
+        
+    return True
+    
+    
+        
+        
+        
 with DAG(
     dag_id='dw_network_links_floki',
     schedule_interval= "30 10 * * *",
@@ -203,4 +274,4 @@ with DAG(
             _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
             dw_files_upload_s3(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
    
-    initialization() >> test_proxy() >> tasks_dw_floki
+    initialization() >> test_proxy() >> tasks_dw_floki >> get_list_elements()
