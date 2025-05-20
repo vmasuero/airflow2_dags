@@ -222,12 +222,12 @@ def get_list_elements(ti=None, ds=None, **kwargs):
     _output_file_elements = ti.xcom_pull(task_ids="initialization", key="output_file_elements")
 
     
-    _res = requests.get(URL_LIST_ELEMS, proxies=PROXY_PARAMS)
+    _req = requests.get(URL_LIST_ELEMS, proxies=PROXY_PARAMS)
     
     if _req.status_code != 200:
         raise AirflowFailException("Codigo de error recibido %s"%str(_req.status_code))
         
-    _content = _res.content.decode().split('\n')
+    _content = _req.content.decode().split('\n')
     
     if len(_content) < 10:
         print('Error retrieving list of files')
