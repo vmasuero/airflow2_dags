@@ -205,7 +205,7 @@ def get_list_elements(ti=None, ds=None, **kwargs):
             
         _buffer = BytesIO()
         
-        data.to_csv(_buffer, compression = "gzip", sep=";", index=False)
+        data.to_csv(_buffer, sep=";", index=False)
         _buffer.seek(0)
         
         _res = s3.Object(bucket, path).put(Body=_buffer.getvalue())
