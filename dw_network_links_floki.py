@@ -19,6 +19,9 @@ PROXY_PARAMS = {
     "http":"http://10.36.13.147:3128"
 }
 
+FLOKI_TEST_PAGE = 'http://200.27.26.27'
+
+
 FILTER_TAB = [
     'IPRAN',
     #'CORE INT.',
@@ -84,10 +87,20 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
 )
 def test_proxy(**kwargs):
     
-    proxy_server = foo = Variable.get("PROXY_CORP")
+    proxy_server = Variable.get("PROXY_CORP")
+    proxy = {
+        "http": proxy_server,
+        "https": proxy_server
+    }
     
     print("Check Proxy Server")
-    print(proxy_server)
+    print(proxy)
+    
+    try:
+        response = requests.get(FLOKI_TEST_PAGE, proxies=proxy, timeout=10)
+        print("Proxy works! Your IP is:", response.json()["origin"])
+    except requests.exceptions.RequestException as e:
+        print("Proxy failed:", e)
     
     return True
     
