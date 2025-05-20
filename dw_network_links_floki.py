@@ -196,10 +196,10 @@ with DAG(
     tags=['development', 'bw','floki']
 ) as dag:
 
-    #with TaskGroup(group_id='dw_tasks') as tasks_dw_floki:
+    with TaskGroup(group_id='dw_tasks') as tasks_dw_floki:
 
-    #    for i,tab in enumerate(FILTER_TAB):
-    #        _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
-    #        dw_files(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
+        for i,tab in enumerate(FILTER_TAB):
+            _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
+            dw_files(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
    
-    initialization() >> test_proxy() #tasks_dw_floki
+    initialization() >> test_proxy() >> tasks_dw_floki
