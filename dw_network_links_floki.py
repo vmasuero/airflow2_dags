@@ -101,7 +101,7 @@ def test_proxy(**kwargs):
     print(PROXY_PARAMS)
     
     try:
-        response = requests.get(FLOKI_TEST_PAGE, proxies=PROXY_PARAMS, timeout=10)
+        response = requests.get(FLOKI_TEST_PAGE, proxies=PROXY_PARAMS)
         print(response)
         print(response.status_code )
 
