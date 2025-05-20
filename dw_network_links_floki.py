@@ -4,6 +4,7 @@ import requests
 import pandas as pd
 import urllib.parse
 import boto3
+from io import StringIO,BytesIO
 
 from airflow import DAG
 from airflow.decorators import dag, task
