@@ -88,6 +88,8 @@ def initialization(data_interval_start=None, ti=None, ds=None,  **kwargs):
 def test_proxy(**kwargs):
     
     proxy_server = Variable.get("PROXY_CORP")
+    proxy_server = "10.36.13.147:3128"
+    
     proxy = {
         "http": proxy_server,
         "https": proxy_server
