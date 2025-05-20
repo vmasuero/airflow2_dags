@@ -103,7 +103,7 @@ def test_proxy(**kwargs):
         response = requests.get(URL_API, proxies=PROXY_PARAMS)
         print(f"Testing: {URL_API}")
         print(response.status_code )
-        print(response.header )
+        print(response.headers )
         print(response)
     
     except requests.exceptions.RequestException as e:
