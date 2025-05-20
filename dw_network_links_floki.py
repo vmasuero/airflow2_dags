@@ -45,6 +45,15 @@ FILTER_TAB = [
 
 S3_PATH = 'NETWORK_COUNTERS/FLOKI'
 
+SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
+ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+REGION = 'sa-santiago-1'
+NAMESPACE = 'axosppplfddw'
+BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
+ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGION)
+bucket_url = f'https://objectstorage.{REGION}.oraclecloud.com/n/{NAMESPACE}/b/{BUCKET}/o/arieso/tmp/file_arieso.csv'
+
+
 
 @task(
     executor_config={'LocalExecutor': {}},
@@ -117,11 +126,19 @@ def test_proxy(**kwargs):
 @task(
     executor_config={'LocalExecutor': {}},
 )
-def dw_files(tab_floki:str, ti=None,  **kwargs):
+def dw_files_upload_s3(tab_floki:str, ti=None,  **kwargs):
 
 
     _url_floki = ti.xcom_pull(task_ids="initialization", key="url_floki")
     _output_directory = ti.xcom_pull(task_ids="initialization", key="output_directory")
+    
+    
+    _s3_api = boto3.resource('s3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT 
+    )
     
     _url = "%s&tab=%s"%(
         _url_floki,
@@ -131,6 +148,7 @@ def dw_files(tab_floki:str, ti=None,  **kwargs):
     print("URL: %s"%_url)
 
     _req = requests.get(_url, proxies=PROXY_PARAMS)
+    _req.raise_for_status()
 
     if _req.status_code != 200:
         raise AirflowFailException("Codigo de error recibido %s"%str(_req.status_code))
@@ -152,13 +170,14 @@ def dw_files(tab_floki:str, ti=None,  **kwargs):
         )
     
     ti.xcom_push(key='filename', value=_filename)
+    print("Writing content in file: %s"%_filename)
 
+    _s3_api.Bucket(BUCKET).put_object(
+        Key=_filename,
+        Body=BytesIO(_req.content),
+        ContentType='application/gzip'  
+    )
     
-    
-    #print("Writing content in file: %s"%_filename)
-    #open(_filename, 'wb').write(_req.content)
-
-
     return True
 
  
