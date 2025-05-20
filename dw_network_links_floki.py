@@ -200,6 +200,6 @@ with DAG(
 
         for i,tab in enumerate(FILTER_TAB):
             _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
-            dw_files(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
+            dw_files_upload_s3(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
    
     initialization() >> test_proxy() >> tasks_dw_floki
