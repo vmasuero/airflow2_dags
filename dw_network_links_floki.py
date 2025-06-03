@@ -275,4 +275,4 @@ with DAG(
             _tab_prefix = tab.lower().replace(' ','_').replace('.','').replace('-','_').replace("'",'') 
             dw_files_upload_s3(task_id='dw_files_'+_tab_prefix, tab_floki=tab)
    
-    initialization() >> test_proxy() >> tasks_dw_floki >> get_list_elements()
+    initialization() >> test_proxy() >> [tasks_dw_floki, get_list_elements()]
