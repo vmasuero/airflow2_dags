@@ -286,6 +286,8 @@ def upload_clickhouse(ti=None, **kwargs):
 
     print(SQL_INSERT_DF)
     
+    print(_twamp_data.sample(10))
+    
     for k,v in _twamp_data.groupby('chunk'):
         print("Sending Chunk: %s"%k)
         client_ch_cli.insert_dataframe(SQL_INSERT_DF, v.drop('chunk', axis=1), settings=dict(use_numpy=True))
