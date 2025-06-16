@@ -214,13 +214,22 @@ def upload_clickhouse(ti=None, **kwargs):
         _data = _data[pd.notnull(_data).all(axis=1)]
 
         
-        _data['DateTime'] = (_data['Date']+_data['Time']).str.replace('DST','')
-        _data = _data[_data['DateTime'].str.match('\d\d\d\d-\d\d-\d\d\ \d\d:\d\d')]
 
+        _data.Date = _data.Date.str.replace(' DST','')
+        _data.Time = _data.Time.str.replace(' DST','')
+        _data = _data[_data.Date.str.match(r'\d\d\d\d-\d\d-\d\d')]
+    
+        _data.Time = _data.Time.apply(lambda x: datetime.strptime(x, "%H:%M").time() )
+        _data['Datetime'] = pd.to_datetime(_data['Date'].astype(str) + ' ' + _data['Time'].astype(str))
+        
+        
+        
         for _col in TWAMP_COLS_NUMBERS:
             print(_col)
             _data[_col] = pd.to_numeric(_data[_col], errors='coerce')
         _data = _data[pd.notnull(_data).all(axis=1)]
+
+        return _data
         
         _data['Twamp_id'] = _data['Twamp_id'].astype('int8')
         _data['MaxRttDelay(ms)'] = _data['MaxRttDelay(ms)'].astype('int32')
@@ -229,6 +238,7 @@ def upload_clickhouse(ti=None, **kwargs):
         _data['RxPackets(packet)'] = _data['RxPackets(packet)'].astype('int16')
         _data['TxPackets(packet)'] = _data['TxPackets(packet)'].astype('int16')
 
+        
         _data = _data[TWAMP_COLS_REPORT]
         
         # PATH , se eliminan los parentesis de los nombres de las columnas
