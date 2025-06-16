@@ -220,7 +220,7 @@ def upload_clickhouse(ti=None, **kwargs):
         _data = _data[_data.Date.str.match(r'\d\d\d\d-\d\d-\d\d')]
     
         _data.Time = _data.Time.apply(lambda x: datetime.strptime(x, "%H:%M").time() )
-        _data['Datetime'] = pd.to_datetime(_data['Date'].astype(str) + ' ' + _data['Time'].astype(str))
+        _data['DateTime'] = pd.to_datetime(_data['Date'].astype(str) + ' ' + _data['Time'].astype(str))
         
         
         
@@ -229,7 +229,7 @@ def upload_clickhouse(ti=None, **kwargs):
             _data[_col] = pd.to_numeric(_data[_col], errors='coerce')
         _data = _data[pd.notnull(_data).all(axis=1)]
 
-        return _data
+
         
         _data['Twamp_id'] = _data['Twamp_id'].astype('int8')
         _data['MaxRttDelay(ms)'] = _data['MaxRttDelay(ms)'].astype('int32')
