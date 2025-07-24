@@ -34,7 +34,7 @@ def read_csv_s3( s3_api, path:str):
     obj_buffer = s3_api.Object(BUCKET, path)
 
     with BytesIO(obj_buffer.get()['Body'].read()) as buffer_fd:
-        _df = pd.read_csv(buffer_fd sep=';')
+        _df = pd.read_csv(buffer_fd, sep=';')
     
     return _df
     
