@@ -179,7 +179,7 @@ def proc_header_file(ti=None):
     _headers = _headers[pd.notnull(_headers['Extremo A'])]
     
     _headers = _headers[HEADERS_COLS]
-    print(_headers)
+
     _headers['Empresa'] = _headers['Empresa'].astype(str)
     _headers['Instancia 0'] = _headers['Instancia 0'].astype(str)
     _headers['Instancia 1'] = _headers['Instancia 1'].astype(str)
@@ -197,7 +197,7 @@ def proc_header_file(ti=None):
     _headers['Descripcion'] = _headers['Descripcion'].astype(str)
     _headers['Capacidad'] = _headers['Capacidad'].astype(float)
 
-
+    print(_headers)
     _headers['device_hash'] = _headers['Extremo A'].apply(format_name)
     _headers['port_hash'] = _headers['Pta A'].apply(format_port)
     
@@ -207,6 +207,7 @@ def proc_header_file(ti=None):
     
     _headers = _headers[HEADERS_COLS + ['hash']]
 
+    print(_headers)
     ti.xcom_push(key='headers', value=_headers.to_dict('records'))
     
     return True
