@@ -197,7 +197,6 @@ def proc_header_file(ti=None):
     _headers['Descripcion'] = _headers['Descripcion'].astype(str)
     _headers['Capacidad'] = _headers['Capacidad'].astype(float)
 
-    print(_headers)
     _headers['device_hash'] = _headers['Extremo A'].apply(format_name)
     _headers['port_hash'] = _headers['Pta A'].apply(format_port)
     
@@ -207,8 +206,7 @@ def proc_header_file(ti=None):
     
     _headers = _headers[HEADERS_COLS + ['hash']]
 
-    print(_headers)
-    ti.xcom_push(key='headers', value=_headers.to_dict('records'))
+    ti.xcom_push(key='headers', value=_headers.to_json())
     
     return True
 
