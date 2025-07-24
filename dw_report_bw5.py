@@ -87,7 +87,10 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _file_s3_devifs = "%s/%s"%(_output_dir, _file_devifs)
     
     _file_s3_headers =  get_list_files(BUCKET, S3_PATH_HEADERS)
-    print(_file_s3_headers)
+    _file_s3_headers = [x for x in _list if 'network_headers_v' in x]
+    
+    _last_header = sorted(_file_s3_headers)[-1].split('/')[-1].split('.')[0]
+    print(_last_header)
     
     
     
@@ -101,6 +104,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     ti.xcom_push(key='output_dir', value=_output_dir)
     ti.xcom_push(key='file_s3_traffic', value=_file_s3_traffic)
     ti.xcom_push(key='file_s3_devifs', value=_file_s3_devifs)
+    ti.xcom_push(key='last_header', value=_last_header)
     
     return True
     
