@@ -63,7 +63,7 @@ def get_list_files(bucket_name, path:str):
         endpoint_url=ENDPOINT
     )
     
-    _list = [x.key for x in _s3.Bucket(bucket_name).objects.filter(Prefix=path)]
+    _list = [x.key for x in _s3.list_objects_v2(Bucket=BUCKET, Prefix=S3_PATH_HEADERS)]
 
     return _list
 
