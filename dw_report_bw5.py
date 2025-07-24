@@ -8,6 +8,7 @@ import boto3
 import pandas as pd
 
 S3_PATH = 'NETWORK_COUNTERS/OYM'
+S3_PATH_HEADERS = 'NETWORK_COUNTERS/HEADERS'
 
 SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
 ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
@@ -48,6 +49,25 @@ def file_exists(bucket_name, key):
     
     return False
 
+
+def get_list_files(bucket_name, path:str):
+
+
+    _list = []
+    
+    _s3 = boto3.client(
+        's3',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+        region_name=REGION,
+        endpoint_url=ENDPOINT
+    )
+    
+    _list = [x.key for x in _s3.Bucket(bucket_name).objects.filter(Prefix=path)]
+
+    return _list
+
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
@@ -65,6 +85,11 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     _file_s3_traffic = "%s/%s"%(_output_dir, _file_traffic)
     _file_s3_devifs = "%s/%s"%(_output_dir, _file_devifs)
+    
+    _file_s3_headers =  get_list_files(BUCKET, S3_PATH_HEADERS)
+    print(_file_s3_headers)
+    
+    
     
     
     if not file_exists(BUCKET, _file_s3_traffic):
