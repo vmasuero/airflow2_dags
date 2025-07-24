@@ -28,7 +28,16 @@ def read_parquet_from_s3(path:str, s3_api):
     
     return _df
     
-
+def read_csv_from_s3(path:str, s3_api):
+    obj_buffer = s3_api.Object(BUCKET, path)
+    
+    with BytesIO(obj_buffer.get()['Body'].read()) as buffer:
+        _df = pd.read_csv(buffer, , sep=';')
+        
+    _df.reset_index(inplace=True)
+    
+    return _df
+    
 def file_exists(bucket_name, key):
     
     _s3 = boto3.client(
@@ -68,6 +77,10 @@ def get_list_files(bucket_name, path:str):
     return _list
 
 
+
+
+
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
@@ -90,7 +103,8 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _file_s3_headers = [x for x in _file_s3_headers if 'network_headers_v' in x]
     
     _last_header = sorted(_file_s3_headers)[-1].split('/')[-1].split('.')[0]
-    print(_last_header)
+    _last_header = "%s/%s"%(S3_PATH_HEADERS, _last_header)
+
     
     
     
@@ -107,7 +121,71 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     ti.xcom_push(key='last_header', value=_last_header)
     
     return True
+ 
+
+
+
+
+@task(
+    executor_config={'LocalExecutor': {}}
+)
+def proc_header_file(ti=None):
+
+    HEADERS_COLS = [
+            'Empresa', 
+            'Instancia 0', 
+            'Instancia 1', 
+            'Instancia 2',
+            'Localidad A', 
+            'Extremo A', 
+            'Pta A', 
+            'Descripcion',
+            'Localidad B',
+            'Extremo B', 
+            'Pta B',
+            'Capacidad'
+    ]
+
+
+    _header_file = ti.xcom_pull(task_ids='initialization', key='last_header')
+    print('Reading Header File: %s'%_header_file)
     
+    _headers = read_csv_from_s3(_header_file)
+    _headers = _headers[pd.notnull(_headers['Extremo A'])]
+    
+    _headers = _headers[HEADERS_COLS]
+    _headers['Empresa'] = _headers['Empresa'].astype(str)
+    _headers['Instancia 0'] = _headers['Instancia 0'].astype(str)
+    _headers['Instancia 1'] = _headers['Instancia 1'].astype(str)
+    _headers['Instancia 2'] = _headers['Instancia 2'].astype(str) 
+    _headers['Localidad A'] = _headers['Localidad A'].astype(str) 
+    _headers['Extremo A'] = _headers['Extremo A'].str.lower().str.strip()
+    _headers['Extremo B'] = _headers['Extremo B'].str.lower().fillna('unknow').str.strip()
+    _headers['Pta A'] = _headers['Pta A'].str.lower().str.replace("'","").str.strip()
+    #_headers['Pta B'] = _headers['Pta B'].str.lower().str.replace("'","").fillna('unknow')
+    _headers['Localidad B'] = _headers['Localidad B'].astype(str).fillna('unknow').str.strip()
+    
+    _headers.loc[ _headers['Localidad A'] == 'nan', 'Localidad A'] = 'unknow'
+    _headers.loc[ _headers['Localidad B'] == 'nan', 'Localidad B'] = 'unknow'
+    
+    _headers['Descripcion'] = _headers['Descripcion'].astype(str)
+    _headers['Capacidad'] = _headers['Capacidad'].astype(float)
+
+
+    _headers['device_hash'] = _headers['Extremo A'].apply(format_name)
+    _headers['port_hash'] = _headers['Pta A'].apply(format_port)
+    
+    _headers[_headers.select_dtypes('object').columns] = _headers[_headers.select_dtypes('object').columns].apply(lambda x: x.str.strip())
+
+    _headers['hash'] = _headers.apply(lambda x: create_hash(x['device_hash'],x['port_hash']), axis=1)
+    
+    _headers = _headers[HEADERS_COLS + ['hash']]
+
+    ti.xcom_push(key='headers', value=_headers.to_dict('records'))
+    
+    return True
+
+ 
 with DAG(
     dag_id ='report_diary_bw5',
     schedule_interval = "30 12 * * *",
@@ -123,6 +201,6 @@ with DAG(
     tags=['reports','bw']
 ) as dag:
 
-    initialization()
+    initialization() >> proc_header_file()
 
 
