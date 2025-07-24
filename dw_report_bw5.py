@@ -7,6 +7,8 @@ import pendulum
 import boto3
 import pandas as pd
 
+from io import StringIO,BytesIO
+
 S3_PATH = 'NETWORK_COUNTERS/OYM'
 S3_PATH_HEADERS = 'NETWORK_COUNTERS/HEADERS'
 
