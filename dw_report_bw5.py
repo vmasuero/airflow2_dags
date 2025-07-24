@@ -55,7 +55,7 @@ def get_list_files(bucket_name, path:str):
 
     _list = []
     
-    _s3 = boto3.resoure(
+    _s3 = boto3.resource(
         's3',
         aws_access_key_id=ACCESS_KEY,
         aws_secret_access_key=SECRET_KEY,
