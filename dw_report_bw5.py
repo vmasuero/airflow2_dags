@@ -29,6 +29,8 @@ def read_parquet_from_s3(path:str, s3_api):
     return _df
     
 def read_csv_from_s3(path:str, s3_api):
+
+
     obj_buffer = s3_api.Object(BUCKET, path)
     
     with BytesIO(obj_buffer.get()['Body'].read()) as buffer:
@@ -146,11 +148,18 @@ def proc_header_file(ti=None):
             'Capacidad'
     ]
 
+    _s3 = boto3.resource(
+        's3',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+        region_name=REGION,
+        endpoint_url=ENDPOINT
+    )
 
     _header_file = ti.xcom_pull(task_ids='initialization', key='last_header')
     print('Reading Header File: %s'%_header_file)
     
-    _headers = read_csv_from_s3(_header_file)
+    _headers = read_csv_from_s3(_header_file, _s3)
     _headers = _headers[pd.notnull(_headers['Extremo A'])]
     
     _headers = _headers[HEADERS_COLS]
