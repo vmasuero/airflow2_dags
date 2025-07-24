@@ -277,10 +277,7 @@ def upload_clickhouse(ti=None, **kwargs):
     FILES = [x.key for x in bucket_cli.objects.filter(Prefix=_filter)  if re.match(_regex,x.key)]
     print('FILES:')
     print(FILES)
-<<<<<<< HEAD
-=======
-   
->>>>>>> 8f59cdc221da3d91dd4265a012713c01b46c0ae9
+
     
     if len(FILES) == 0:
         raise AirflowFailException('No se encuentra el archivo %s'%_regex)
