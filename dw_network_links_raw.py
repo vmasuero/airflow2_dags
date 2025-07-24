@@ -385,12 +385,9 @@ def generate_deltas(ti=None,  **kwargs):
     COMP_DF['check'] = COMP_DF.ifalias.str.replace(r'[^a-zA-Z0-9]', '', regex=True).str.lower()
     COMP_DF['repeated'] = COMP_DF.groupby(level=0)['check'].transform(lambda x: x.duplicated(keep=False))
     COMP_DF = COMP_DF[~COMP_DF.repeated]
-<<<<<<< HEAD
     COMP_DF = COMP_DF.reset_index(drop=True)
    
-=======
-     
->>>>>>> 8f59cdc221da3d91dd4265a012713c01b46c0ae9
+
     
     _file_s3_delta = S3_PATH_DELTAS +'/'+date_current_devif.strftime('%Y%m%d')+"_ClaroVtr_Devifs_Delta.parquet"
     print("Uploading to: %s"%_file_s3_delta)
