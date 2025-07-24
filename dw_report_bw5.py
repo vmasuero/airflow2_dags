@@ -76,9 +76,25 @@ def get_list_files(bucket_name, path:str):
 
     return _list
 
+def format_name(text:str):
+    _ret = re.sub('[^0-9a-zA-Z]+', '', text)
+    _ret = _ret.lower()
+    _ret = _ret.strip()
 
+    return _ret
 
+def format_port(text:str):
+    _ret = re.sub('[\ \']+', '', text)
+    _ret = _ret.lower().strip()
+    
+    return _ret
 
+def create_hash(device:str, port:str):
+    _hash = "%s%s"%(device,port)
+    _hash = _hash.lower().replace(' ','').strip()
+    _hash = re.sub(r'[^0-9a-zA-Z]+','&1&',_hash)
+    
+    return _hash
 
 
 @task(
