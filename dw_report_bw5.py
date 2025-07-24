@@ -41,8 +41,9 @@ def file_exists(bucket_name, key):
     try:
         _s3.head_object(Bucket=bucket_name, Key=key)
         return True
-    except ClientError as e:
+    except Exception as e:
         if e.response['Error']['Code'] == "404":
+            print('File not found: 404')
             return False
     
     return False
