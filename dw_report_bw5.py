@@ -179,6 +179,7 @@ def proc_header_file(ti=None):
     _headers = _headers[pd.notnull(_headers['Extremo A'])]
     
     _headers = _headers[HEADERS_COLS]
+    print('_headers')
     _headers['Empresa'] = _headers['Empresa'].astype(str)
     _headers['Instancia 0'] = _headers['Instancia 0'].astype(str)
     _headers['Instancia 1'] = _headers['Instancia 1'].astype(str)
