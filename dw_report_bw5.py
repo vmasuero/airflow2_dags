@@ -28,15 +28,11 @@ def read_parquet_from_s3(path:str, s3_api):
     
     return _df
     
-def read_csv_from_s3(path:str, s3_api):
-
-
+def read_csv_s3( s3_api, path:str):
     obj_buffer = s3_api.Object(BUCKET, path)
-    
-    with BytesIO(obj_buffer.get()['Body'].read()) as buffer:
-        _df = pd.read_csv(buffer, sep=';')
-        
-    _df.reset_index(inplace=True)
+
+    with BytesIO(obj_buffer.get()['Body'].read()) as buffer_fd:
+        _df = pd.read_csv(buffer_fd sep=';')
     
     return _df
     
@@ -159,7 +155,7 @@ def proc_header_file(ti=None):
     _header_file = ti.xcom_pull(task_ids='initialization', key='last_header')
     print('Reading Header File: %s'%_header_file)
     
-    _headers = read_csv_from_s3(_header_file, _s3)
+    _headers = read_csv_s3(_s3,_header_file )
     _headers = _headers[pd.notnull(_headers['Extremo A'])]
     
     _headers = _headers[HEADERS_COLS]
