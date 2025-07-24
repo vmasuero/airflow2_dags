@@ -157,7 +157,7 @@ def proc_header_file(ti=None):
     _header_file = ti.xcom_pull(task_ids='initialization', key='last_header')
     print('Reading Header File: %s'%_header_file)
     
-    _headers = read_csv_s3(_s3,_header_file )
+    _headers = read_csv_s3(_s3,_header_file+".csv" )
     _headers = _headers[pd.notnull(_headers['Extremo A'])]
     
     _headers = _headers[HEADERS_COLS]
