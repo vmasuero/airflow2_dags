@@ -104,11 +104,31 @@ def upload_parquet_s3(data:pd.DataFrame, filename:str, s3_api):
 )
 def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwargs):
     
+    _s3_api = boto3.resource(
+        's3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT
+    )
+
+    
     print("Yesteraday Date in RAW version: %s "%yesterday_ds)
     _date = datetime.strptime(str(yesterday_ds), "%Y-%m-%d")
     
     _year = _date.year
     _output_dir = "%s/%s"%(S3_PATH,_year)
+    
+    
+    _bucket = _s3_api.Bucket(BUCKET)
+    _header_files = [obj.key for obj in _bucket.objects.filter(Prefix=HEADERS_PATH)]
+    _header_file = get_last_version_file(_header_files)
+    
+    
+    
+    
+    
+    
     
     _file_ssh_traffic = '%s/%s_ClaroVtr_Traffic_v2.parquet'%(REMOTE_SFTP_PATH,ds_nodash)
     _file_shh_devifs = '%s/%s_ClaroVtr_Devifs.parquet'%(REMOTE_SFTP_PATH,ds_nodash)
@@ -122,7 +142,8 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     ti.xcom_push(key='file_shh_devifs', value=_file_shh_devifs)
     ti.xcom_push(key='file_s3_traffic', value=_file_s3_traffic)
     ti.xcom_push(key='file_s3_devifs', value=_file_s3_devifs)
-    
+    ti.xcom_push(key='header_file', value=_header_file)
+
     return True
 
 
