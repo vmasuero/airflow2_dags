@@ -70,6 +70,24 @@ def read_parquet_s3( s3_api, path:str, bucket:str, cols=[]):
     return _df 
 
 
+def get_last_version_file(file_list):
+    versioned_files = []
+    pattern = re.compile(r'network_headers_v(\d+)\.csv$')
+
+    for f in file_list:
+        match = pattern.search(f)
+        if match:
+            version = int(match.group(1))
+            versioned_files.append((version, f))
+
+    if not versioned_files:
+        return None  # no matching files
+
+    # return the file with the highest version
+    return max(versioned_files, key=lambda x: x[0])[1]
+    
+
+
 def upload_parquet_s3(data:pd.DataFrame, filename:str, s3_api):
 
     _parquet_buffer = BytesIO()
@@ -418,4 +436,4 @@ with DAG(
 ) as dag:
 
    
-    initialization() >> check_files() >> download_files() >> upload_clickhouse() >> generate_deltas()
+    initialization() >> check_files() #>> download_files() >> upload_clickhouse() >> generate_deltas()
