@@ -30,7 +30,8 @@ BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGION)
 bucket_url = f'https://objectstorage.{REGION}.oraclecloud.com/n/{NAMESPACE}/b/{BUCKET}/o/arieso/tmp/file_arieso.csv'
 
-
+DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY/{int(datetime.now().strftime('%Y'))}'
+HEADERS_DIR = 'NETWORK_COUNTERS/HEADERS'
 
 # CLICKHOUSE
 SHARDS = 5
@@ -124,26 +125,32 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _bucket = _s3_api.Bucket(BUCKET)
     _header_files = [obj.key for obj in _bucket.objects.filter(Prefix=HEADERS_PATH)]
     _header_file = get_last_version_file(_header_files)
+    _header_file_prefix = _header_file.split('/')[-1].split('.')[0]
     
-    
+    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}-{_header_file_prefix}.xls'
+    _report_file_parquet = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}-{_header_file_prefix}.parquet'
+
     
     
     
     
     
     _file_ssh_traffic = '%s/%s_ClaroVtr_Traffic_v2.parquet'%(REMOTE_SFTP_PATH,ds_nodash)
-    _file_shh_devifs = '%s/%s_ClaroVtr_Devifs.parquet'%(REMOTE_SFTP_PATH,ds_nodash)
+    _file_ssh_devifs = '%s/%s_ClaroVtr_Devifs.parquet'%(REMOTE_SFTP_PATH,ds_nodash)
     
     
     _file_s3_traffic = "%s/%s"%(_output_dir,_file_ssh_traffic.split('/')[-1])
-    _file_s3_devifs = "%s/%s"%(_output_dir,_file_shh_devifs.split('/')[-1])
+    _file_s3_devifs = "%s/%s"%(_output_dir,_file_ssh_devifs.split('/')[-1])
     
     ti.xcom_push(key='output_dir', value=_output_dir)
     ti.xcom_push(key='file_ssh_traffic', value=_file_ssh_traffic)
-    ti.xcom_push(key='file_shh_devifs', value=_file_shh_devifs)
+    ti.xcom_push(key='file_ssh_devifs', value=_file_ssh_devifs)
     ti.xcom_push(key='file_s3_traffic', value=_file_s3_traffic)
     ti.xcom_push(key='file_s3_devifs', value=_file_s3_devifs)
     ti.xcom_push(key='header_file', value=_header_file)
+    ti.xcom_push(key='report_file_xls', value=_report_file_xls)
+    ti.xcom_push(key='report_file_parquet', value=_report_file_parquet)
+
 
     return True
 
@@ -155,7 +162,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
 def check_files(ti=None,  **kwargs):
     
     _file_ssh_traffic = ti.xcom_pull(task_ids='initialization', key='file_ssh_traffic') 
-    _file_shh_devifs = ti.xcom_pull(task_ids='initialization', key='file_shh_devifs')
+    _file_ssh_devifs = ti.xcom_pull(task_ids='initialization', key='file_ssh_devifs')
     
     conn = SFTPHook(ftp_conn_id=SFTP_CONNECTION)
     if not conn.isfile(_file_ssh_traffic):
@@ -163,9 +170,9 @@ def check_files(ti=None,  **kwargs):
     print("File %s in server.....OK"%_file_ssh_traffic)
         
         
-    if not conn.isfile(_file_shh_devifs):
-        raise AirflowFailException("Remote file not exists: %s"%_file_shh_devifs)
-    print("File %s in server.....OK"%_file_shh_devifs)
+    if not conn.isfile(_file_ssh_devifs):
+        raise AirflowFailException("Remote file not exists: %s"%_file_ssh_devifs)
+    print("File %s in server.....OK"%_file_ssh_devifs)
         
 
     return True
@@ -188,7 +195,7 @@ def download_files(ti=None,  **kwargs):
 
 
     _file_ssh_traffic = ti.xcom_pull(task_ids='initialization', key='file_ssh_traffic') 
-    _file_ssh_devifs = ti.xcom_pull(task_ids='initialization', key='file_shh_devifs')
+    _file_ssh_devifs = ti.xcom_pull(task_ids='initialization', key='file_ssh_devifs')
     
     _file_s3_traffic = ti.xcom_pull(task_ids='initialization', key='file_s3_traffic') 
     _file_s3_devifs = ti.xcom_pull(task_ids='initialization', key='file_s3_devifs')
@@ -458,4 +465,4 @@ with DAG(
 ) as dag:
 
    
-    initialization() >> check_files() >> download_files() # >> upload_clickhouse() >> generate_deltas()
+    initialization() >> check_files() #>> download_files() # >> upload_clickhouse() >> generate_deltas()
