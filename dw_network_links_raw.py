@@ -71,6 +71,14 @@ def read_parquet_s3( s3_api, path:str, bucket:str, cols=[]):
 
     return _df 
 
+def upload_parquet_s3(s3_api, data:pd.DataFrame, filename:str):
+
+    _parquet_buffer = BytesIO()
+    data.to_parquet(_parquet_buffer)
+    
+    _res = s3_api.Object(BUCKET, filename).put(Body=_parquet_buffer.getvalue())
+    
+    return list(_res.items())[0][1]['HTTPStatusCode'] == 200
 
 def get_last_version_file(file_list):
     versioned_files = []
@@ -90,7 +98,7 @@ def get_last_version_file(file_list):
     
 
 
-def upload_parquet_s3(data:pd.DataFrame, filename:str, s3_api):
+def upload_parquet_s3(s3_api, data:pd.DataFrame, filename:str):
 
     _parquet_buffer = BytesIO()
     data.to_parquet(_parquet_buffer)
@@ -127,13 +135,9 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _header_file = get_last_version_file(_header_files)
     _header_file_prefix = _header_file.split('/')[-1].split('.')[0]
     
-    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}-{_header_file_prefix}.xls'
-    _report_file_parquet = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}-{_header_file_prefix}.parquet'
+    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.xls'
+    _report_file_parquet = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.parquet'
 
-    
-    
-    
-    
     
     _file_ssh_traffic = '%s/%s_ClaroVtr_Traffic_v2.parquet'%(REMOTE_SFTP_PATH,ds_nodash)
     _file_ssh_devifs = '%s/%s_ClaroVtr_Devifs.parquet'%(REMOTE_SFTP_PATH,ds_nodash)
@@ -230,6 +234,420 @@ def download_files(ti=None,  **kwargs):
 
     return True
     
+@task(
+    executor_config={'LocalExecutor': {}},
+    pool= 'CLICKHOUSE_POOL'
+)
+def create_report(ti=None,  **kwargs):
+
+    _s3_api = boto3.resource(
+        's3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        region_name = REGION, 
+        endpoint_url = ENDPOINT
+    )
+    
+    def remove_outliners(g, cols=("in", "out"), factor=1.5):
+
+        for col in cols:
+            Q1 = g[col].quantile(0.25)
+            Q3 = g[col].quantile(0.75)
+            IQR = Q3 - Q1
+            lower = Q1 - factor * IQR
+            upper = Q3 + factor * IQR
+
+            mean_val = g[col].mean()
+
+            mask = (g[col] < lower) | (g[col] > upper)
+            g.loc[mask, col] = mean_val
+            
+        return g
+
+    def proc_header_file(path):
+        print("Reading File: %s"%path)
+        _headers = read_csv_from_s3(_s3_api,path)
+        _headers = _headers[pd.notnull(_headers['Extremo A'])]
+        
+        _headers = _headers[HEADERS_COLS]
+        _headers['Empresa'] = _headers['Empresa'].astype(str)
+        _headers['Instancia 0'] = _headers['Instancia 0'].astype(str)
+        _headers['Instancia 1'] = _headers['Instancia 1'].astype(str)
+        _headers['Instancia 2'] = _headers['Instancia 2'].astype(str) 
+        _headers['Localidad A'] = _headers['Localidad A'].astype(str) 
+        _headers['Extremo A'] = _headers['Extremo A'].str.lower().str.strip()
+        _headers['Extremo B'] = _headers['Extremo B'].str.lower().fillna('unknow').str.strip()
+        _headers['Pta A'] = _headers['Pta A'].str.lower().str.replace("'","").str.strip()
+        #_headers['Pta B'] = _headers['Pta B'].str.lower().str.replace("'","").fillna('unknow')
+        _headers['Localidad B'] = _headers['Localidad B'].astype(str).fillna('unknow').str.strip()
+        
+        _headers.loc[ _headers['Localidad A'] == 'nan', 'Localidad A'] = 'unknow'
+        _headers.loc[ _headers['Localidad B'] == 'nan', 'Localidad B'] = 'unknow'
+        
+        _headers['Descripcion'] = _headers['Descripcion'].astype(str)
+        _headers['Capacidad'] = _headers['Capacidad'].astype(float)
+    
+    
+        #_headers['device_hash'] = _headers['Extremo A'].apply(format_name)
+        #_headers['port_hash'] = _headers['Pta A'].apply(format_port)
+        
+        _headers[_headers.select_dtypes('object').columns] = _headers[_headers.select_dtypes('object').columns].apply(lambda x: x.str.strip())
+    
+        #_headers['hash'] = _headers.apply(lambda x: create_hash(x['device_hash'],x['port_hash']), axis=1)
+        
+        #_headers = _headers[HEADERS_COLS + ['hash']]
+        _headers = _headers[HEADERS_COLS]
+        _headers = _headers.set_index('Devif')
+    
+    
+        #ti.xcom_push(key='headers', value=_headers.to_dict('records'))
+        
+        return _headers
+
+    def proc_devifs_file(path):
+        print("Reading File: %s"%path)
+        _data = read_parquet_from_s3(_s3_api, path)
+        _data = _data[pd.notnull(_data['devname']) & pd.notnull(_data['ifname'])]
+        
+        #_data['device_hash'] = _data['devname'].apply(lambda x: x.split('.')[0]).apply(format_name)
+        #_data['port_hash'] = _data['ifname'].apply(format_port)  
+        #_data['hash'] = _data.apply(lambda x: create_hash(x['device_hash'],x['port_hash']), axis=1)
+        #_data['devif'] = pd.to_numeric(_data['devif'], downcast='integer')
+        _data = _data.set_index('devif')
+        
+        #return _data[['devname','ifname','ifalias','hash']]
+        return _data[['devname','ifname','ifalias']]
+
+    def proc_traffic_file(path):
+        print("Reading File: %s"%path)
+        MEGA = 1000000
+        
+        _traffic_df = read_parquet_from_s3(_s3_api,path)
+        
+        _traffic_df['datetime'] = pd.to_datetime(_traffic_df['time'], format='%Y-%m-%d %H:%M:%S')
+        _traffic_df['devif'] = pd.to_numeric(_traffic_df['devif'])
+        _traffic_df['in'] = pd.to_numeric(_traffic_df['input'])/MEGA
+        _traffic_df['out'] = pd.to_numeric(_traffic_df['output'])/MEGA
+        
+        _traffic_df.loc[_traffic_df['in'] < 0,'in'] = nan
+        _traffic_df.loc[_traffic_df['out'] < 0,'out'] = nan
+        
+        #_traffic_df['devif'] = pd.to_numeric(_traffic_df['devif'], downcast='integer')
+        _traffic_df = _traffic_df.set_index('devif')
+        _traffic_df = _traffic_df.sort_values(by='datetime')
+        _traffic_df = _traffic_df[['datetime','in','out']]
+
+        return _traffic_df
+
+    def create_summaries(data):
+        SUMMARIES = []
+        _data_report = data.copy()
+        
+        print('Adding Summaries')
+        _data_report_0 = _data_report.copy()
+        _data_report_0['Total'] = 0
+        SUMMARIES.append(_data_report_0)
+    
+        ## ########### BY Device
+        _data_report_1 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Localidad A',
+            'Extremo A'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_1['Total'] = 1
+        SUMMARIES.append(_data_report_1)
+    
+        ############ By Instancia 2
+        _data_report_2 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_2['Total'] = 2
+        SUMMARIES.append(_data_report_2)
+    
+        ############ By Instancia 1
+        _data_report_3 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_3['Total'] = 3
+        SUMMARIES.append(_data_report_3)
+    
+        ############ By Total
+        _data_report_4 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_4['Total'] = 4
+        SUMMARIES.append(_data_report_4)
+    
+        ############ By Localidad
+        _data_report_5 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Localidad A'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_5['Total'] = 5
+        SUMMARIES.append(_data_report_5)
+    
+    
+        ############ Total por empresa
+        _data_report_11 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_11['Total'] = 6
+        SUMMARIES.append(_data_report_11)
+    
+        ############ Total 
+        _data_report_12 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_12['Total'] = 7
+        SUMMARIES.append(_data_report_12)
+    
+        #### Total Instancia 1 sin empresa
+        _data_report_13 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_13['Total'] = 8
+        SUMMARIES.append(_data_report_13)
+    
+        #### Total Instancia 1 sin empresa
+        _data_report_14 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_14['Total'] = 9
+        SUMMARIES.append(_data_report_14)
+    
+        ####################################################### EXTREMO B ###############################
+        ############ By Extremo A y Extremo B
+        _data_report_6 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_6['Total'] = 101
+        SUMMARIES.append(_data_report_6)
+    
+        ############ By Extremo A y Localidad B
+        _data_report_7 = _data_report[ _data_report['Localidad B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Localidad B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_7['Total'] = 102
+        SUMMARIES.append(_data_report_7)
+    
+    
+        ############ By Extremo A y Extremo B, y empresa
+        _data_report_8 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_8['Total'] = 103
+        SUMMARIES.append(_data_report_8)
+    
+        ############ By Extremo A y Localidad B, y empresa
+        _data_report_9 = _data_report[ _data_report['Localidad B'] != 'unknow'].groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Localidad B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_9['Total'] = 104
+        SUMMARIES.append(_data_report_9)
+    
+        ############ By Extremo A y Localidad B, y empresa
+        _data_report_10 = _data_report[ _data_report['Localidad B'] != 'unknow'].groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Localidad B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_10['Total'] = 105
+        SUMMARIES.append(_data_report_10)
+    
+        ############ By Extremo A y Extremo B
+        _data_report_11 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_11['Total'] = 106
+        SUMMARIES.append(_data_report_11)
+    
+        ############ Extremo B
+        _data_report_12 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_12['Total'] = 107
+        SUMMARIES.append(_data_report_12)
+    
+        _data_report_13 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_13['Total'] = 108
+        SUMMARIES.append(_data_report_13)
+    
+    
+        _data_all_summaries = pd.concat(SUMMARIES, axis=0, ignore_index=True)
+        _data_all_summaries['BW [Mbps]'] = _data_all_summaries[TIME_COLUMNS].max(axis=1)
+        _data_all_summaries['Fecha'] = pd.Series([x.strftime('%Y-%m-%d') for x in TIME_COLUMNS]).mode().values[0]
+        
+        _data_all_summaries = _data_all_summaries[[
+                'Total',
+                'Empresa', 
+                'Instancia 0',
+                'Instancia 1', 
+                'Instancia 2', 
+                'Localidad A', 
+                'Extremo A',
+                'Pta A', 
+                'Descripcion',
+                'Fecha',
+                'Localidad B',
+                'Extremo B',
+                'Direccion',
+                'Capacidad',
+                'BW [Mbps]'
+        ]]
+    
+        _data_all_summaries = _data_all_summaries.sort_values(by=[
+            'Empresa', 
+            'Instancia 0',
+            'Instancia 1', 
+            'Instancia 2', 
+            'Localidad A', 
+            'Extremo A', 
+            'Total'
+        ])
+    
+        return _data_all_summaries
+
+    #_file_vtr_devifs = ti.xcom_pull(task_ids='initialization', key='file_vtr_devifs') if ti != None else file_vtr_devifs
+    _file_vtr_traffic = ti.xcom_pull(task_ids='initialization', key='file_vtr_traffic')
+    _header_file = ti.xcom_pull(task_ids='initialization', key='header_file')
+    
+    _report_file_xls = ti.xcom_pull(task_ids='initialization', key='report_file_xls')
+    _report_file_parquet = ti.xcom_pull(task_ids='initialization', key='report_file_parquet')
+    
+    
+    
+    _report_file_parquet = ti.xcom_pull(task_ids='initialization', key='report_file_parquet')
+    _report_file_xls = ti.xcom_pull(task_ids='initialization', key='report_file_xls')
+
+    
+    _header = proc_header_file(_header_file)
+    #_devifs = proc_devifs_file(_file_vtr_devifs)
+    _traffic = proc_traffic_file(_file_vtr_traffic)
+
+
+    _traffic =_traffic[_traffic.index.isin(_header.index)]
+    _traffic['in'] = _traffic.groupby('devif')['in'].transform(lambda x: x.fillna(x.mean()))
+    _traffic['out'] = _traffic.groupby('devif')['out'].transform(lambda x: x.fillna(x.mean()))
+
+    print('Checking active links')
+    active_links = _traffic[['in','out']].copy().max(axis=1).groupby(level=0).mean()
+    active_links = active_links[active_links > 5].index
+    _traffic = _traffic.loc[ _traffic.index.isin(active_links) ]
+    
+    print('Removing outliners')
+    _traffic = _traffic.groupby(level=0, group_keys=False).apply(remove_outliners)
+
+    
+    print("Samplig data in %s"%SAMPLING)
+    _traffic = _traffic.set_index(['datetime'], append=True).groupby(level=0).resample(SAMPLING, level=1).max()
+    _traffic.reset_index(inplace=True)
+    _traffic = _traffic.set_index('devif')
+    
+    
+    _traffic_in = pd.pivot_table(_traffic, values=['in'], index=['devif'], columns=['datetime'], aggfunc="max").droplevel(level=0, axis=1)
+    _traffic_in['Direccion'] = 'IN'
+
+    _traffic_out = pd.pivot_table(_traffic, values=['out'], index=['devif'], columns=['datetime'], aggfunc="max").droplevel(level=0, axis=1)
+    _traffic_out['Direccion'] = 'OUT'
+
+    _traffic_inout = pd.concat([_traffic_in,_traffic_out])
+
+    CAT_COLUMNS = list(_header.columns) + ['Direccion']
+    TIME_COLUMNS = [x for x in list(_traffic_inout.columns) if x != 'Direccion']
+    
+    _traffic_inout = _traffic_inout.join(_header, how='right')
+    _traffic_inout = _traffic_inout[CAT_COLUMNS+TIME_COLUMNS]
+    _traffic_inout = _traffic_inout[pd.notnull(_traffic_inout['Extremo A'])]
+    
+    print(f"Saving parquet file:{_report_file_parquet}")
+    upload_parquet_s3(_s3_api, _traffic_inout, _report_file_parquet):
+
+    
+
+    print('Create Summaries')
+    _traffic_inout = create_summaries(_traffic_inout)
+    
+    print(f"Saving excel file:{_report_file_xls}")
+    upload_parquet_s3(_s3_api, _traffic_inout, _report_file_xls):
+
+    
+    
+    return True
+
+
+
+
+
+
+
+
+
 
 @task(
     executor_config={'LocalExecutor': {}},
@@ -446,7 +864,7 @@ def generate_deltas(ti=None,  **kwargs):
     return True
 
 
-    
+   
 
         
 with DAG(
