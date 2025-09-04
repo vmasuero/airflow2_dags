@@ -5,6 +5,7 @@ import re
 import boto3
 import pandas as pd
 from random import randint
+from numpy import nan
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
