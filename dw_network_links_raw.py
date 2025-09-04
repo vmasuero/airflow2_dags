@@ -626,7 +626,7 @@ def create_report(ti=None,  **kwargs):
     _traffic_inout = _traffic_inout[pd.notnull(_traffic_inout['Extremo A'])]
     
     print(f"Saving parquet file:{_report_file_parquet}")
-    upload_parquet_s3(_s3_api, _traffic_inout, _report_file_parquet):
+    upload_parquet_s3(_s3_api, _traffic_inout, _report_file_parquet)
 
     
 
@@ -634,7 +634,7 @@ def create_report(ti=None,  **kwargs):
     _traffic_inout = create_summaries(_traffic_inout)
     
     print(f"Saving excel file:{_report_file_xls}")
-    upload_parquet_s3(_s3_api, _traffic_inout, _report_file_xls):
+    upload_parquet_s3(_s3_api, _traffic_inout, _report_file_xls)
 
     
     
