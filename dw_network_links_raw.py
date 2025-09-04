@@ -106,8 +106,17 @@ def upload_parquet_s3(s3_api, data:pd.DataFrame, filename:str):
     _res = s3_api.Object(BUCKET, filename).put(Body=_parquet_buffer.getvalue())
     
     return list(_res.items())[0][1]['HTTPStatusCode'] == 200
+    
 
-
+def read_csv_from_s3( s3_api, path:str):
+    obj_buffer = s3_api.Object(BUCKET, path)
+    
+    with BytesIO(obj_buffer.get()['Body'].read()) as buffer:
+        _df = pd.read_csv(buffer, sep=';')
+        
+    _df.reset_index(inplace=True)
+    
+    return _df
 
 @task(
     executor_config={'LocalExecutor': {}},
