@@ -84,7 +84,7 @@ def upload_parquet_s3(s3_api, data:pd.DataFrame, filename:str):
     
     return list(_res.items())[0][1]['HTTPStatusCode'] == 200
     
- def upload_excel_s3(s3_api, data:pd.DataFrame, filename:str):
+def upload_excel_s3(s3_api, data:pd.DataFrame, filename:str):
 
     _buffer = BytesIO()
     data.to_excel(_buffer, index=False)
@@ -672,7 +672,7 @@ def create_report(ti=None,  **kwargs):
     _traffic_inout = create_summaries(_traffic_inout)
     
     print(f"Saving excel file:{_report_file_xls}")
-    upload_parquet_s3(_s3_api, _traffic_inout, _report_file_xls)
+    upload_excel_s3(_s3_api, _traffic_inout, _report_file_xls)
 
     
     
