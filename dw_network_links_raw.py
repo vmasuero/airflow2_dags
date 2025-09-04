@@ -599,7 +599,7 @@ def create_report(ti=None,  **kwargs):
         return _data_all_summaries
 
     #_file_vtr_devifs = ti.xcom_pull(task_ids='initialization', key='file_vtr_devifs') if ti != None else file_vtr_devifs
-    _file_vtr_traffic = ti.xcom_pull(task_ids='initialization', key='file_vtr_traffic')
+    _file_s3_traffic = ti.xcom_pull(task_ids='initialization', key='file_s3_traffic')
     _header_file = ti.xcom_pull(task_ids='initialization', key='header_file')
     
     _report_file_xls = ti.xcom_pull(task_ids='initialization', key='report_file_xls')
@@ -613,7 +613,7 @@ def create_report(ti=None,  **kwargs):
     
     _header = proc_header_file(_header_file)
     #_devifs = proc_devifs_file(_file_vtr_devifs)
-    _traffic = proc_traffic_file(_file_vtr_traffic)
+    _traffic = proc_traffic_file(_file_s3_traffic)
 
 
     _traffic =_traffic[_traffic.index.isin(_header.index)]
