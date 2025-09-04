@@ -249,6 +249,22 @@ def download_files(ti=None,  **kwargs):
 )
 def create_report(ti=None,  **kwargs):
 
+    HEADERS_COLS = [
+            'Empresa', 
+            'Instancia 0', 
+            'Instancia 1', 
+            'Instancia 2',
+            'Localidad A', 
+            'Extremo A', 
+            'Pta A', 
+            'Descripcion',
+            'Localidad B',
+            'Extremo B', 
+            'Pta B',
+            'Capacidad',
+            'Devif'
+    ]
+
     _s3_api = boto3.resource(
         's3',
         aws_access_key_id = ACCESS_KEY,
