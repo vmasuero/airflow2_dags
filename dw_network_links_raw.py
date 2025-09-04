@@ -883,4 +883,4 @@ with DAG(
 ) as dag:
 
    
-    initialization() >> check_files() #>> download_files() # >> upload_clickhouse() >> generate_deltas()
+    initialization() >> check_files() >> download_files() >> create_report() # >> upload_clickhouse() >> generate_deltas()
