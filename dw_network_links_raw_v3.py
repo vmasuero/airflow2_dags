@@ -23,6 +23,15 @@ BUCKET = 'readrepo'
 PREFIX = 'traffic/'
 
 
+
+OCI_SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
+OCI_ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+OCI_REGION = 'sa-santiago-1'
+OCI_NAMESPACE = 'axosppplfddw'
+OCI_BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
+OCI_ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(OCI_NAMESPACE,OCI_REGION)
+
+
 S3_PATH = 'NETWORK_COUNTERS/OYM_v3'
 HEADERS_PATH = 'NETWORK_COUNTERS/HEADERS'
 DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY_v3/{int(datetime.now().strftime('%Y'))}'
@@ -64,11 +73,11 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     _s3_api = boto3.resource(
         's3',
-        aws_access_key_id = ACCESS_KEY,
-        aws_secret_access_key = SECRET_KEY,
-        endpoint_url = ENDPOINT
+        aws_access_key_id = OCI_ACCESS_KEY,
+        aws_secret_access_key = OCI_SECRET_KEY,
+        region_name = OCI_REGION, 
+        endpoint_url = OCI_ENDPOINT
     )
-
     
     print("Yesteraday Date in RAW version: %s "%yesterday_ds)
     _date = datetime.strptime(str(yesterday_ds), "%Y-%m-%d")
@@ -80,7 +89,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     #traffic/20250812_ClaroVtr_Traffic_v3.parquet
     
-    _bucket = _s3_api.Bucket(BUCKET)
+    _bucket = _s3_api.Bucket(OCI_BUCKET)
     _header_files = [obj.key for obj in _bucket.objects.filter(Prefix=HEADERS_PATH)]
     _header_file = get_last_version_file(_header_files)
     _header_file_prefix = _header_file.split('/')[-1].split('.')[0]
