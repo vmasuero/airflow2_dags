@@ -45,6 +45,22 @@ def read_parquet_s3( s3_api, path:str, bucket:str, cols=[]):
     executor_config={'LocalExecutor': {}},
 )
 def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwargs):
+
+    def get_last_version_file(file_list):
+        versioned_files = []
+        pattern = re.compile(r'network_headers_v(\d+)\.csv$')
+
+        for f in file_list:
+            match = pattern.search(f)
+            if match:
+                version = int(match.group(1))
+                versioned_files.append((version, f))
+
+        if not versioned_files:
+            return None  # no matching files
+
+        # return the file with the highest version
+        return max(versioned_files, key=lambda x: x[0])[1]
     
     _s3_api = boto3.resource(
         's3',
