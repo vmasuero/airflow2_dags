@@ -23,8 +23,9 @@ BUCKET = 'readrepo'
 PREFIX = 'traffic/'
 
 
-S3_PATH = 'NETWORK_COUNTERS/OYM'
-
+S3_PATH = 'NETWORK_COUNTERS/OYM_v3'
+HEADERS_PATH = 'NETWORK_COUNTERS/HEADERS'
+DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY_v3/{int(datetime.now().strftime('%Y'))}'
 
 def read_parquet_s3( s3_api, path:str, bucket:str, cols=[]):
     obj_buffer = s3_api.Object(bucket, path)
@@ -58,13 +59,28 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     _year = _date.year
     _output_dir = "%s/%s"%(S3_PATH,_year)
-    
-    print(ds_nodash)
-    print(_output_dir)
+    _remote_file = f"{PREFIX}/{ds_nodash}__ClaroVtr_Traffic_v3.parquet"
     
     
+    #traffic/20250812_ClaroVtr_Traffic_v3.parquet
     
+    _bucket = _s3_api.Bucket(BUCKET)
+    _header_files = [obj.key for obj in _bucket.objects.filter(Prefix=HEADERS_PATH)]
+    _header_file = get_last_version_file(_header_files)
+    _header_file_prefix = _header_file.split('/')[-1].split('.')[0]
+    
+    
+    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.xls'
+    _report_file_parquet = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.parquet'
 
+    
+    
+    ti.xcom_push(key='output_dir', value=_output_dir)
+    ti.xcom_push(key='remote_file', value=_remote_file)
+    ti.xcom_push(key='header_file', value=_header_file)
+    ti.xcom_push(key='header_file_prefix', value=_header_file_prefix)
+    ti.xcom_push(key='report_file_xls', value=_report_file_xls)
+    ti.xcom_push(key='report_file_parquet', value=_report_file_parquet)
 
     return True
 
