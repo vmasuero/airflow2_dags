@@ -679,12 +679,19 @@ def create_report(ti=None,  **kwargs):
     return True
 
 
+@task(
+    executor_config={'LocalExecutor': {}},
+    pool= 'CLICKHOUSE_POOL'
+)
+def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
 
+    _date_current = data_interval_start
 
+     if _date_current.weekday() != 0:
+            print('is not Monday, skip')
+            raise AirflowSkipException('is not Monday, skip')
 
-
-
-
+    return True
 
 
 @task(
@@ -921,4 +928,4 @@ with DAG(
 ) as dag:
 
    
-    initialization() >> check_files() >> download_files() >> create_report() # >> upload_clickhouse() >> generate_deltas()
+    initialization() >> check_files() >> download_files() >> create_report() >> create_report_weekly() # >> upload_clickhouse() >> generate_deltas()
