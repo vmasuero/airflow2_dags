@@ -687,7 +687,7 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
 
     _date_current = data_interval_start
 
-     if _date_current.weekday() != 0:
+    if _date_current.weekday() != 0:
             print('is not Monday, skip')
             raise AirflowSkipException('is not Monday, skip')
 
