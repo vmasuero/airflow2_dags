@@ -619,7 +619,7 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
 
 
     _date_current = data_interval_start
-    _week = _date_current.strftime('%W')
+    _week = int(_date_current.strftime('%W'))
     print("Week: %s"%_week)
 
     if _date_current.weekday() != 0:
@@ -641,7 +641,7 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
     _files['file'] = _files.path.apply(lambda x: x.split('/')[-1])
     _files['date_f'] = _files.file.str.extract(r'(\d+-\d+-\d+)_network_headers_.*').apply(lambda x: pd.to_datetime(x, format='%Y-%m-%d'))
 
-    _files['week'] = _files.date_f.apply(lambda x: x.isocalendar()[1])
+    _files['week'] = _files.date_f.apply(lambda x: x.isocalendar()[1]).astype(int)
 
     _files = _files[_files.week == _week]
     print(_files)    
