@@ -32,7 +32,7 @@ OCI_BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 OCI_ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(OCI_NAMESPACE,OCI_REGION)
 
 
-S3_PATH = 'NETWORK_COUNTERS/OYM_v3'
+S3_PATH = f"NETWORK_COUNTERS/OYM_v3/{int(datetime.now().strftime('%Y'))}"
 HEADERS_PATH = 'NETWORK_COUNTERS/HEADERS'
 DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY_v3/{int(datetime.now().strftime('%Y'))}'
 
@@ -116,7 +116,8 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
 def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwargs):
 
     _remote_file = ti.xcom_pull(task_ids='initialization', key='remote_file') 
-    _remote_file_oci = f"{S3_PATH}/{_remote_file.split('/')[-1]}"
+    _output_dir = ti.xcom_pull(task_ids='initialization', key='output_dir') 
+    _remote_file_oci = f"{_output_dir}/{_remote_file.split('/')[-1]}"
 
 
     _s3_api_r = boto3.resource(
@@ -135,6 +136,7 @@ def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  *
     )
     
     try:
+    
         fd, tmp_path = tempfile.mkstemp()
         os.close(fd)
         
@@ -148,6 +150,7 @@ def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  *
         _bucket_oci = _s3_api_oci.Bucket(OCI_BUCKET)
         _bucket_oci.upload_file(tmp_path, _remote_file_oci, ExtraArgs={"ContentType": "application/x-parquet"})
     finally:
+        print(f"Deleting temp file: {tmp_path}")
         os.remove(tmp_path) 
     
     return True
