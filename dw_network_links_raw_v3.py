@@ -151,7 +151,8 @@ def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  *
     finally:
         os.remove(tmp_path) 
     
-
+    return True
+    
 with DAG(
     dag_id='dw_network_links_raw_v3',
     schedule_interval= "30 9 * * *",
@@ -168,5 +169,5 @@ with DAG(
 ) as dag:
 
    
-    initialization() 
+    initialization() >> dowload_upload_raw()
     
