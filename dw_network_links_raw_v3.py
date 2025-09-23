@@ -32,7 +32,7 @@ OCI_BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 OCI_ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(OCI_NAMESPACE,OCI_REGION)
 
 
-S3_PATH = f"NETWORK_COUNTERS/OYM_v3/{int(datetime.now().strftime('%Y'))}"
+S3_PATH = f"NETWORK_COUNTERS/OYM_v3"
 HEADERS_PATH = 'NETWORK_COUNTERS/HEADERS'
 DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY_v3/{int(datetime.now().strftime('%Y'))}'
 
