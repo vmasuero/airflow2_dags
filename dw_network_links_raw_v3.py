@@ -902,6 +902,7 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
             _data_report, 
             read_parquet_s3(_s3_api_oci, file.path, OCI_BUCKET)
         ])
+        
     print(f'cerate report in {_file_report}')
     _data_report = create_summaries(_data_report)
     
