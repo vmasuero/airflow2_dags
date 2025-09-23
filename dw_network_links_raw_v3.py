@@ -176,7 +176,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _remote_file_oci = f"{_output_dir}/{_remote_file.split('/')[-1]}"
     
     
-    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.xls'
+    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.xlsx'
     _report_file_parquet = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.parquet'
 
     
@@ -866,7 +866,7 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
     _date_current = data_interval_start
     _week = int(_date_current.strftime('%W'))
     _current_day = _date_current.strftime('%Y-%m-%d')
-    _file_report = f"{_reports_dir_weekly}/{_current_day}_network_headers_W{_week}.xls"
+    _file_report = f"{_reports_dir_weekly}/{_current_day}_network_headers_W{_week}.xlsx"
     
     print("Week: %s"%_week)
 
