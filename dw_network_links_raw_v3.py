@@ -640,8 +640,9 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
     _files = pd.DataFrame(_files, columns=['path'])
     _files['file'] = _files.path.apply(lambda x: x.split('/')[-1])
     _files['date_f'] = _files.file.str.extract(r'(\d+-\d+-\d+)_network_headers_.*').apply(lambda x: pd.to_datetime(x, format='%Y-%m-%d'))
-    print(_files)
+
     _files['week'] = _files.date_f.apply(lambda x: x.isocalendar()[1])
+    print(_files)
     _files = _files[_files.week == _week]
     
     
