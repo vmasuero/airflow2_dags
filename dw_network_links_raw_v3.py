@@ -24,7 +24,6 @@ BUCKET = 'readrepo'
 PREFIX = 'traffic'
 
 
-
 OCI_SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
 OCI_ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
 OCI_REGION = 'sa-santiago-1'
@@ -85,7 +84,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     _year = _date.year
     _output_dir = "%s/%s"%(S3_PATH,_year)
-    _remote_file = f"{PREFIX}/{ds_nodash}__ClaroVtr_Traffic_v3.parquet"
+    _remote_file = f"{PREFIX}/{ds_nodash}_ClaroVtr_Traffic_v3.parquet"
     
     
     #traffic/20250812_ClaroVtr_Traffic_v3.parquet
