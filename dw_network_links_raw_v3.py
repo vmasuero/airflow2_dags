@@ -94,6 +94,8 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _header_file = get_last_version_file(_header_files)
     _header_file_prefix = _header_file.split('/')[-1].split('.')[0]
     
+    _remote_file_oci = f"{_output_dir}/{_remote_file.split('/')[-1]}"
+    
     
     _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.xls'
     _report_file_parquet = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.parquet'
@@ -102,6 +104,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     ti.xcom_push(key='output_dir', value=_output_dir)
     ti.xcom_push(key='remote_file', value=_remote_file)
+    ti.xcom_push(key='remote_file_oci', value=_remote_file_oci)
     ti.xcom_push(key='header_file', value=_header_file)
     ti.xcom_push(key='header_file_prefix', value=_header_file_prefix)
     ti.xcom_push(key='report_file_xls', value=_report_file_xls)
@@ -116,9 +119,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
 def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwargs):
 
     _remote_file = ti.xcom_pull(task_ids='initialization', key='remote_file') 
-    _output_dir = ti.xcom_pull(task_ids='initialization', key='output_dir') 
-    _remote_file_oci = f"{_output_dir}/{_remote_file.split('/')[-1]}"
-
+    _remote_file_oci = ti.xcom_pull(task_ids='initialization', key='_remote_file_oci') 
 
     _s3_api_r = boto3.resource(
         's3',
