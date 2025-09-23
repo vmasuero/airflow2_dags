@@ -610,6 +610,9 @@ def create_daily_report(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  
 )
 def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
 
+    _output_dir = ti.xcom_pull(task_ids='initialization', key='output_dir') 
+
+
     _date_current = data_interval_start
     _week = _date_current.strftime('%W')
     print("Week: %s"%_week)
@@ -618,6 +621,24 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
             print('is not Monday, skip')
             raise AirflowSkipException('is not Monday, skip')
 
+    _s3_api_oci = boto3.resource(
+        's3',
+        aws_access_key_id = OCI_ACCESS_KEY,
+        aws_secret_access_key = OCI_SECRET_KEY,
+        region_name = OCI_REGION, 
+        endpoint_url = OCI_ENDPOINT
+    )
+    
+    _bucket = _s3_api_oci.Bucket(OCI_BUCKET)
+    _files = [obj.key for obj in _bucket.objects.filter(Prefix=_output_dir) if 'parquet' in obj.key]
+    _files = pd.DataFrame(_files, columns=['path'])
+    _files['file'] = _files.path.apply(lambda x: x.split('/')[-1])
+    _files['date_f'] = _files.file.str.extract(r'(\d+)_ClaroVtr_Traffic_v3.parquet').apply(lambda x: pd.to_datetime(x, format='%Y%m%d'))
+    _files['week'] = _files.date_f.apply(lambda x: x.isocalendar()[1])
+    _files = _files[_files.week == _week]
+    
+    
+    ti.xcom_push(key='files_report_week', value=_files)
     print('cerate report')
     return True
 
