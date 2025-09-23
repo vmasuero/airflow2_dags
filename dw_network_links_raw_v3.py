@@ -116,7 +116,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
 def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwargs):
 
     _remote_file = ti.xcom_pull(task_ids='initialization', key='remote_file') 
-    _remote_file_oci = _remote_file.split('/')[-1]
+    _remote_file_oci = f"{S3_PATH}/{_remote_file.split('/')[-1]}"
 
 
     _s3_api_r = boto3.resource(
