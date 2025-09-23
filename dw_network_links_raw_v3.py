@@ -33,6 +33,7 @@ OCI_ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(OCI_NAMESPA
 
 
 S3_PATH = f"NETWORK_COUNTERS/OYM_v3"
+DIARY_REPORTS_PATH =  "NETWORK_COUNTERS/REPORT_DIARY_v3"
 HEADERS_PATH = 'NETWORK_COUNTERS/HEADERS'
 DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY_v3/{int(datetime.now().strftime('%Y'))}'
 
@@ -156,6 +157,8 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     
     _year = _date.year
     _output_dir = "%s/%s"%(S3_PATH,_year)
+    _reports_dir = "%s/%s"%(DIARY_REPORTS_PATH,_year)
+    
     _remote_file = f"{PREFIX}/{ds_nodash}_ClaroVtr_Traffic_v3.parquet"
     
     
@@ -181,6 +184,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     ti.xcom_push(key='header_file_prefix', value=_header_file_prefix)
     ti.xcom_push(key='report_file_xls', value=_report_file_xls)
     ti.xcom_push(key='report_file_parquet', value=_report_file_parquet)
+    ti.xcom_push(key='reports_dir', value=_reports_dir)
 
     return True
 
@@ -611,6 +615,7 @@ def create_daily_report(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  
 def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
 
     _output_dir = ti.xcom_pull(task_ids='initialization', key='output_dir') 
+    _reports_dir = ti.xcom_pull(task_ids='initialization', key='reports_dir') 
 
 
     _date_current = data_interval_start
@@ -630,15 +635,15 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
     )
     
     _bucket = _s3_api_oci.Bucket(OCI_BUCKET)
-    _files = [obj.key for obj in _bucket.objects.filter(Prefix=_output_dir) if 'parquet' in obj.key]
+    _files = [obj.key for obj in _bucket.objects.filter(Prefix=_reports_dir) if 'parquet' in obj.key]
     _files = pd.DataFrame(_files, columns=['path'])
     _files['file'] = _files.path.apply(lambda x: x.split('/')[-1])
-    _files['date_f'] = _files.file.str.extract(r'(\d+)_ClaroVtr_Traffic_v3.parquet').apply(lambda x: pd.to_datetime(x, format='%Y%m%d'))
+    _files['date_f'] = _files.file.str.extract(r'(\d+-\d+-\d+)_network_headers_.*').apply(lambda x: pd.to_datetime(x, format='%Y-%m-%d'))
     _files['week'] = _files.date_f.apply(lambda x: x.isocalendar()[1])
     _files = _files[_files.week == _week]
     
     
-    ti.xcom_push(key='files_report_week', value=_files)
+    ti.xcom_push(key='files_report_week', value=_files.path.tolist())
     print('cerate report')
     return True
 
