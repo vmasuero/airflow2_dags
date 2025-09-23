@@ -634,6 +634,7 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
         endpoint_url = OCI_ENDPOINT
     )
     
+    print(f"Buscando en directorios {_reports_dir}")
     _bucket = _s3_api_oci.Bucket(OCI_BUCKET)
     _files = [obj.key for obj in _bucket.objects.filter(Prefix=_reports_dir) if 'parquet' in obj.key]
     _files = pd.DataFrame(_files, columns=['path'])
