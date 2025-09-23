@@ -6,6 +6,7 @@ import boto3
 import pandas as pd
 from random import randint
 from numpy import nan
+import tempfile
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -20,7 +21,7 @@ SECRET_KEY = 'YVxIZIwFYvIGiv89xJuOuYyXubWtRomGF4EPre0Z'
 ACCESS_KEY = 'READREPO_ACCESS_KEY'
 ENDPOINT = 'http://10.68.12.60:9000'
 BUCKET = 'readrepo'
-PREFIX = 'traffic/'
+PREFIX = 'traffic'
 
 
 
@@ -108,6 +109,48 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     ti.xcom_push(key='report_file_parquet', value=_report_file_parquet)
 
     return True
+
+
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwargs):
+
+    _remote_file = ti.xcom_pull(task_ids='initialization', key='remote_file') 
+    _remote_file_oci = _remote_file.split('/')[-1]
+
+
+    _s3_api_r = boto3.resource(
+        's3',
+        aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+        endpoint_url = ENDPOINT
+    )
+
+    _s3_api_oci = boto3.resource(
+        's3',
+        aws_access_key_id = OCI_ACCESS_KEY,
+        aws_secret_access_key = OCI_SECRET_KEY,
+        region_name = OCI_REGION, 
+        endpoint_url = OCI_ENDPOINT
+    )
+    
+    try:
+        fd, tmp_path = tempfile.mkstemp()
+        os.close(fd)
+        
+        print(f"Downlaod file: {_remote_file}")
+        print(f"Temp file: {tmp_path}")
+        _bucket = _s3_api_r.Bucket(BUCKET)
+        _bucket.download_file(_remote_file, tmp_path)
+
+
+        print(f"Upload file: {_remote_file_oci}")
+        _bucket_oci = _s3_api_oci.Bucket(OCI_BUCKET)
+        bucket.upload_file(tmp_path, _remote_file_oci, ExtraArgs={"ContentType": "application/x-parquet"})
+    finally:
+        os.remove(tmp_path) 
+    
 
 with DAG(
     dag_id='dw_network_links_raw_v3',
