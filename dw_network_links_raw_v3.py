@@ -358,5 +358,5 @@ with DAG(
 ) as dag:
 
    
-    initialization() >> dowload_upload_raw()
+    initialization() >> dowload_upload_raw() >> create_daily_report()
     
