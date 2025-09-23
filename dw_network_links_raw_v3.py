@@ -905,8 +905,8 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
         
     print(f'cerate report in {_file_report}')
     _data_report = create_summaries(_data_report)
-    
-    print(_data_report.sample(4))
+    upload_excel_s3(_s3_api_oci, OCI_BUCKET, _data_report, _file_report)
+  
     
     ti.xcom_push(key='files_report_week', value=_files.path.tolist())
     ti.xcom_push(key='reports_dir_weekly', value=_reports_dir_weekly)
