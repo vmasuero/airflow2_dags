@@ -642,9 +642,9 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
     _files['date_f'] = _files.file.str.extract(r'(\d+-\d+-\d+)_network_headers_.*').apply(lambda x: pd.to_datetime(x, format='%Y-%m-%d'))
 
     _files['week'] = _files.date_f.apply(lambda x: x.isocalendar()[1])
-    print(_files)
+
     _files = _files[_files.week == _week]
-    
+    print(_files)    
     
     ti.xcom_push(key='files_report_week', value=_files.path.tolist())
     print('cerate report')
