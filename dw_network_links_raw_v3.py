@@ -112,7 +112,14 @@ def upload_parquet_s3(s3_api, bucket, data:pd.DataFrame, filename:str):
     
     return list(_res.items())[0][1]['HTTPStatusCode'] == 200
 
+def upload_excel_s3(s3_api, bucket, data:pd.DataFrame, filename:str):
 
+    _buffer = BytesIO()
+    data.to_excel(_buffer, index=False)
+    
+    _res = s3_api.Object(bucket, filename).put(Body=_buffer.getvalue())
+    
+    return list(_res.items())[0][1]['HTTPStatusCode'] == 200
 
 
 @task(
@@ -309,6 +316,239 @@ def create_daily_report(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  
 
         return data
 
+    def create_summaries(data):
+        SUMMARIES = []
+        _data_report = data.copy()
+        
+        print('Adding Summaries')
+        _data_report_0 = _data_report.copy()
+        _data_report_0['Total'] = 0
+        SUMMARIES.append(_data_report_0)
+    
+        ## ########### BY Device
+        _data_report_1 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Localidad A',
+            'Extremo A'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_1['Total'] = 1
+        SUMMARIES.append(_data_report_1)
+    
+        ############ By Instancia 2
+        _data_report_2 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_2['Total'] = 2
+        SUMMARIES.append(_data_report_2)
+    
+        ############ By Instancia 1
+        _data_report_3 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_3['Total'] = 3
+        SUMMARIES.append(_data_report_3)
+    
+        ############ By Total
+        _data_report_4 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_4['Total'] = 4
+        SUMMARIES.append(_data_report_4)
+    
+        ############ By Localidad
+        _data_report_5 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Localidad A'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_5['Total'] = 5
+        SUMMARIES.append(_data_report_5)
+    
+    
+        ############ Total por empresa
+        _data_report_11 = _data_report.groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_11['Total'] = 6
+        SUMMARIES.append(_data_report_11)
+    
+        ############ Total 
+        _data_report_12 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_12['Total'] = 7
+        SUMMARIES.append(_data_report_12)
+    
+        #### Total Instancia 1 sin empresa
+        _data_report_13 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_13['Total'] = 8
+        SUMMARIES.append(_data_report_13)
+    
+        #### Total Instancia 1 sin empresa
+        _data_report_14 = _data_report.groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_14['Total'] = 9
+        SUMMARIES.append(_data_report_14)
+    
+        ####################################################### EXTREMO B ###############################
+        ############ By Extremo A y Extremo B
+        _data_report_6 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_6['Total'] = 101
+        SUMMARIES.append(_data_report_6)
+    
+        ############ By Extremo A y Localidad B
+        _data_report_7 = _data_report[ _data_report['Localidad B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Localidad B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_7['Total'] = 102
+        SUMMARIES.append(_data_report_7)
+    
+    
+        ############ By Extremo A y Extremo B, y empresa
+        _data_report_8 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_8['Total'] = 103
+        SUMMARIES.append(_data_report_8)
+    
+        ############ By Extremo A y Localidad B, y empresa
+        _data_report_9 = _data_report[ _data_report['Localidad B'] != 'unknow'].groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Localidad B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_9['Total'] = 104
+        SUMMARIES.append(_data_report_9)
+    
+        ############ By Extremo A y Localidad B, y empresa
+        _data_report_10 = _data_report[ _data_report['Localidad B'] != 'unknow'].groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Localidad B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_10['Total'] = 105
+        SUMMARIES.append(_data_report_10)
+    
+        ############ By Extremo A y Extremo B
+        _data_report_11 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo A',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_11['Total'] = 106
+        SUMMARIES.append(_data_report_11)
+    
+        ############ Extremo B
+        _data_report_12 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_12['Total'] = 107
+        SUMMARIES.append(_data_report_12)
+    
+        _data_report_13 = _data_report[ _data_report['Extremo B'] != 'unknow'].groupby([
+            'Direccion',
+            'Empresa',
+            'Instancia 0', 
+            'Instancia 1',
+            'Instancia 2',
+            'Extremo B'
+        ],as_index=False).sum(numeric_only=True)
+        _data_report_13['Total'] = 108
+        SUMMARIES.append(_data_report_13)
+    
+    
+        _data_all_summaries = pd.concat(SUMMARIES, axis=0, ignore_index=True)
+        _data_all_summaries['BW [Mbps]'] = _data_all_summaries[TIME_COLUMNS].max(axis=1)
+        _data_all_summaries['Fecha'] = pd.Series([x.strftime('%Y-%m-%d') for x in TIME_COLUMNS]).mode().values[0]
+        
+        _data_all_summaries = _data_all_summaries[[
+                'Total',
+                'Empresa', 
+                'Instancia 0',
+                'Instancia 1', 
+                'Instancia 2', 
+                'Localidad A', 
+                'Extremo A',
+                'Pta A', 
+                'Descripcion',
+                'Fecha',
+                'Localidad B',
+                'Extremo B',
+                'Direccion',
+                'Capacidad',
+                'BW [Mbps]'
+        ]]
+    
+        _data_all_summaries = _data_all_summaries.sort_values(by=[
+            'Empresa', 
+            'Instancia 0',
+            'Instancia 1', 
+            'Instancia 2', 
+            'Localidad A', 
+            'Extremo A', 
+            'Total'
+        ])
+    
+        return _data_all_summaries
 
     _remote_file = ti.xcom_pull(task_ids='initialization', key='remote_file') 
     _remote_file_oci = ti.xcom_pull(task_ids='initialization', key='remote_file_oci') 
@@ -352,8 +592,15 @@ def create_daily_report(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  
     _traffic = _traffic.set_index('devif')
     _traffic = _header.join(_traffic)
    
-    print(f"Upload file: {_report_file_parquet}")
+    print(f"Saving parquet file: {_report_file_parquet}")
     upload_parquet_s3(_s3_api_oci, OCI_BUCKET, _traffic, _report_file_parquet)
+    
+    
+    print('Create Summaries')
+    _traffic = create_summaries(_traffic)
+    
+    print(f"Saving excel file: {_report_file_xls}")
+    upload_excel_s3(_s3_api_oci, OCI_BUCKET, _traffic, _report_file_xls)
     
     return True
     
