@@ -893,11 +893,22 @@ def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
 
     _files = _files[_files.week == _week]
     
+
+    
+    _data_report = pd.DataFrame()
+    for k,file in _files.iterrows():
+        print(f"Reading file: {file.path}")
+        _data_report = pd.concat([
+            _data_report, 
+            read_parquet_s3(_s3_api_oci, file.path, OCI_BUCKET)
+        ])
+    print(f'cerate report in {_file_report}')
+    _data_report = create_summaries(_data_report)
+    
+    print(_data_report.sample(4))
+    
     ti.xcom_push(key='files_report_week', value=_files.path.tolist())
     ti.xcom_push(key='reports_dir_weekly', value=_reports_dir_weekly)
-    
-    
-    print(f'cerate report in {_file_report}')
     return True
 
 
