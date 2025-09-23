@@ -119,7 +119,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
 def dowload_upload_raw(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwargs):
 
     _remote_file = ti.xcom_pull(task_ids='initialization', key='remote_file') 
-    _remote_file_oci = ti.xcom_pull(task_ids='initialization', key='_remote_file_oci') 
+    _remote_file_oci = ti.xcom_pull(task_ids='initialization', key='remote_file_oci') 
 
     _s3_api_r = boto3.resource(
         's3',
