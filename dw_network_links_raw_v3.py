@@ -93,14 +93,15 @@ def read_csv_from_s3( s3_api, bucket, path:str):
     return _df    
 
 
-def upload_parquet_s3(s3_api, bucket, data:pd.DataFrame, filename:str):
-
-    _parquet_buffer = BytesIO()
-    data.to_parquet(_parquet_buffer)
+def read_parquet_from_s3( s3_api, bucket, path:str, cols=None):
+    obj_buffer = s3_api.Object(bucket, path)
     
-    _res = s3_api.Object(bucket, filename).put(Body=_parquet_buffer.getvalue())
-
+    with BytesIO(obj_buffer.get()['Body'].read()) as buffer:
+        _df = pd.read_parquet(buffer, columns=cols)
+        
     
+    
+    return _df   
 
 @task(
     executor_config={'LocalExecutor': {}},
