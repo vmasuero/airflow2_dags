@@ -605,7 +605,21 @@ def create_daily_report(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  
     return True
     
    
+@task(
+    executor_config={'LocalExecutor': {}}
+)
+def create_report_weekly(ti=None, data_interval_start=None, **kwargs):
 
+    _date_current = data_interval_start
+    _week = _date_current.strftime('%W')
+    print("Week: %s"%_week)
+
+    if _date_current.weekday() != 0:
+            print('is not Monday, skip')
+            raise AirflowSkipException('is not Monday, skip')
+
+    print('cerate report')
+    return True
 
 
 with DAG(
@@ -624,5 +638,5 @@ with DAG(
 ) as dag:
 
    
-    initialization() >> dowload_upload_raw() >> create_daily_report()
+    initialization() >> dowload_upload_raw() >> create_daily_report() >> create_report_weekly()
     
