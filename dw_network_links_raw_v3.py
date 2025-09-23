@@ -103,6 +103,18 @@ def read_parquet_from_s3( s3_api, bucket, path:str, cols=None):
     
     return _df   
 
+def upload_parquet_s3(s3_api, bucket, data:pd.DataFrame, filename:str):
+
+    _parquet_buffer = BytesIO()
+    data.to_parquet(_parquet_buffer)
+    
+    _res = s3_api.Object(bucket, filename).put(Body=_parquet_buffer.getvalue())
+    
+    return list(_res.items())[0][1]['HTTPStatusCode'] == 200
+
+
+
+
 @task(
     executor_config={'LocalExecutor': {}},
 )
@@ -301,6 +313,10 @@ def create_daily_report(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  
     _remote_file = ti.xcom_pull(task_ids='initialization', key='remote_file') 
     _remote_file_oci = ti.xcom_pull(task_ids='initialization', key='remote_file_oci') 
     _header_file = ti.xcom_pull(task_ids='initialization', key='header_file')
+    
+    _report_file_parquet = ti.xcom_pull(task_ids='initialization', key='report_file_parquet')
+    _report_file_xls = ti.xcom_pull(task_ids='initialization', key='report_file_xls')
+
 
     _s3_api_oci = boto3.resource(
         's3',
@@ -336,7 +352,9 @@ def create_daily_report(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  
     _traffic = _traffic.set_index('devif')
     _traffic = _header.join(_traffic)
    
-    print(_traffic.sample(10))
+    print(f"Upload file: {_report_file_parquet}")
+    upload_parquet_s3(_s3_api_oci, OCI_BUCKET, _traffic, _report_file_parquet)
+    
     return True
     
    
