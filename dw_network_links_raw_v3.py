@@ -160,7 +160,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _year = _date.year
     _output_dir = "%s/%s"%(S3_PATH,_year)
     _reports_dir = "%s/%s"%(DIARY_REPORTS_PATH,_year)
-    _reports_dir_weekly = "%s/%s"%(DIARY_REPORTS_PATH,_year)
+    _reports_dir_weekly = "%s/%s"%(WEEKLY_REPORTS_PATH,_year)
 
     
     _remote_file = f"{PREFIX}/{ds_nodash}_ClaroVtr_Traffic_v3.parquet"
