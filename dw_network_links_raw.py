@@ -33,7 +33,7 @@ BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGION)
 bucket_url = f'https://objectstorage.{REGION}.oraclecloud.com/n/{NAMESPACE}/b/{BUCKET}/o/arieso/tmp/file_arieso.csv'
 
-DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY/{int(datetime.now().strftime('%Y'))}'
+DIARY_REPORT_DIR = f'NETWORK_COUNTERS/REPORT_DIARY_v3/{int(datetime.now().strftime('%Y'))}'
 HEADERS_DIR = 'NETWORK_COUNTERS/HEADERS'
 
 # CLICKHOUSE
@@ -608,8 +608,8 @@ def create_report(ti=None,  **kwargs):
     
     
     
-    _report_file_parquet = ti.xcom_pull(task_ids='initialization', key='report_file_parquet')
-    _report_file_xls = ti.xcom_pull(task_ids='initialization', key='report_file_xls')
+    #_report_file_parquet = ti.xcom_pull(task_ids='initialization', key='report_file_parquet')
+    #_report_file_xls = ti.xcom_pull(task_ids='initialization', key='report_file_xls')
 
     
     _header = proc_header_file(_header_file)
