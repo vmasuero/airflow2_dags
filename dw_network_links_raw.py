@@ -910,8 +910,8 @@ with DAG(
         'max_active_runs': 1,
         "retry_delay": timedelta(minutes=30)
     },
-    start_date=pendulum.datetime( 2024, 9, 1, tz='America/Santiago'),
-    catchup=False,
+    start_date=pendulum.datetime( 2025, 8, 31, tz='America/Santiago'),
+    catchup=True,
     tags=['development', 'bw']
 ) as dag:
 
