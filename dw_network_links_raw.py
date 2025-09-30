@@ -157,7 +157,7 @@ def initialization(yesterday_ds = None, ds=None, ti=None, ds_nodash=None,  **kwa
     _header_file = get_last_version_file(_header_files)
     _header_file_prefix = _header_file.split('/')[-1].split('.')[0]
     
-    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.xls'
+    _report_file_xls = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.xlsx'
     _report_file_parquet = f'{DIARY_REPORT_DIR}/{ds_nodash[:4]}-{ds_nodash[4:6]}-{ds_nodash[6:8]}_{_header_file_prefix}.parquet'
 
     
@@ -339,10 +339,6 @@ def create_report(ti=None,  **kwargs):
         _data = read_parquet_from_s3(_s3_api, path)
         _data = _data[pd.notnull(_data['devname']) & pd.notnull(_data['ifname'])]
         
-        #_data['device_hash'] = _data['devname'].apply(lambda x: x.split('.')[0]).apply(format_name)
-        #_data['port_hash'] = _data['ifname'].apply(format_port)  
-        #_data['hash'] = _data.apply(lambda x: create_hash(x['device_hash'],x['port_hash']), axis=1)
-        #_data['devif'] = pd.to_numeric(_data['devif'], downcast='integer')
         _data = _data.set_index('devif')
         
         #return _data[['devname','ifname','ifalias','hash']]
