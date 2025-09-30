@@ -297,7 +297,8 @@ def create_report(ti=None,  **kwargs):
 
             mean_val = g[col].mean()
 
-            mask = (g[col] < lower) | (g[col] > upper)
+            #mask = (g[col] < lower) | (g[col] > upper)
+            mask = g[col] > upper
             g.loc[mask, col] = mean_val
             
         return g
@@ -316,7 +317,6 @@ def create_report(ti=None,  **kwargs):
         _headers['Extremo A'] = _headers['Extremo A'].str.lower().str.strip()
         _headers['Extremo B'] = _headers['Extremo B'].str.lower().fillna('unknow').str.strip()
         _headers['Pta A'] = _headers['Pta A'].str.lower().str.replace("'","").str.strip()
-        #_headers['Pta B'] = _headers['Pta B'].str.lower().str.replace("'","").fillna('unknow')
         _headers['Localidad B'] = _headers['Localidad B'].astype(str).fillna('unknow').str.strip()
         
         _headers.loc[ _headers['Localidad A'] == 'nan', 'Localidad A'] = 'unknow'
@@ -325,20 +325,12 @@ def create_report(ti=None,  **kwargs):
         _headers['Descripcion'] = _headers['Descripcion'].astype(str)
         _headers['Capacidad'] = _headers['Capacidad'].astype(float)
     
-    
-        #_headers['device_hash'] = _headers['Extremo A'].apply(format_name)
-        #_headers['port_hash'] = _headers['Pta A'].apply(format_port)
         
         _headers[_headers.select_dtypes('object').columns] = _headers[_headers.select_dtypes('object').columns].apply(lambda x: x.str.strip())
     
-        #_headers['hash'] = _headers.apply(lambda x: create_hash(x['device_hash'],x['port_hash']), axis=1)
-        
-        #_headers = _headers[HEADERS_COLS + ['hash']]
         _headers = _headers[HEADERS_COLS]
         _headers = _headers.set_index('Devif')
     
-    
-        #ti.xcom_push(key='headers', value=_headers.to_dict('records'))
         
         return _headers
 
