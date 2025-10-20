@@ -249,6 +249,11 @@ def download_files(task_id_nm,  conn_id, ti=None, **kwargs):
     _len_list_files_paths = len(_list_files_paths)
     print("Files in Server: %s"%_len_list_files_paths)
     conn = SFTPHook(ftp_conn_id=conn_id)
+    
+    ok, msg = hook.test_connection()
+    if not ok:
+        raise AirflowFailException(f"SFTP connection failed: {msg}")
+    
 
     downloaded_files = 0
     downloaded_list = []
