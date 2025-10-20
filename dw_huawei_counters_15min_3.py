@@ -253,7 +253,8 @@ def download_files(task_id_nm,  conn_id, ti=None, **kwargs):
     ok, msg = hook.test_connection()
     if not ok:
         raise AirflowFailException(f"SFTP connection failed: {msg}")
-    
+    else:
+        print(f'conection with server OK {msg}')
 
     downloaded_files = 0
     downloaded_list = []
