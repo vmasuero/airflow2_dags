@@ -192,6 +192,11 @@ def get_list_files(remote_path, conn_id, ti=None, **kwargs):
     print("Remote Path: %s"%_remote_path)
 
     conn = SFTPHook(ftp_conn_id=conn_id)
+    ok, msg = hook.test_connection()
+    if not ok:
+        raise AirflowFailException(f"SFTP connection failed: {msg}")
+    else:
+        print(f'conection with server OK {msg}')
     print('Get list Files SFTP server: .............')
     _list_of_files_0 = conn.list_directory(_remote_path)
     
@@ -250,11 +255,7 @@ def download_files(task_id_nm,  conn_id, ti=None, **kwargs):
     print("Files in Server: %s"%_len_list_files_paths)
     conn = SFTPHook(ftp_conn_id=conn_id)
     
-    ok, msg = hook.test_connection()
-    if not ok:
-        raise AirflowFailException(f"SFTP connection failed: {msg}")
-    else:
-        print(f'conection with server OK {msg}')
+
 
     downloaded_files = 0
     downloaded_list = []
