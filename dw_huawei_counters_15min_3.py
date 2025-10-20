@@ -192,7 +192,7 @@ def get_list_files(remote_path, conn_id, ti=None, **kwargs):
     print("Remote Path: %s"%_remote_path)
 
     conn = SFTPHook(ftp_conn_id=conn_id)
-    ok, msg = hook.test_connection()
+    ok, msg = conn.test_connection()
     if not ok:
         raise AirflowFailException(f"SFTP connection failed: {msg}")
     else:
