@@ -307,7 +307,7 @@ def upload_clickhouse(ti=None, **kwargs):
   
 with DAG(
     dag_id='dw_huawei_twamp',
-    schedule_interval= "0 10 * * *",
+    schedule_interval= "0 5 * * *",
     default_args={
         "depends_on_past": False,
         'owner': 'Vmasuero',
