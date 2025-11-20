@@ -320,23 +320,22 @@ def delete_older_files(ti=None, logical_date=None, **kwargs):
     _remote_files = conn.list_directory(REMOTE_PATH)
     _remote_files = [x for x in _remote_files if re.match(_regex,x)]
     
-
+    print(f'current date: {_current_date}')
+    print(f'delete files from date: {_delete_date}')
+    
     if len(_remote_files) == 0:
         raise AirflowFailException('No existen archivo en directorio remoto')
      
-
     _files = pd.DataFrame(_remote_files, columns=['path'])
     _files = _files.join( _files.path.str.extract(r'huawei_twamp_v\d+_\d+_(\d\d\d\d)(\d\d)(\d\d).*').rename(columns={0:'year',1:'month',2:'day'}).astype(int))
     _files['date_f'] = _files.apply(lambda x: datetime(x.year, x.month, x.day), axis=1)
     _files = _files.sort_values(by='date_f')
-    _files = _files[_files.date_f < _delete_date.date()]
+    _files = _files[_files.date_f < _delete_date.strftime('%Y-%m-%d')]
          
     print(_remote_files)
-    print(f'current date: {_current_date}')
-    print(f'delete files from date: {_delete_date}')
-    
+
     if len(_files) == 0:
-        print('There is not files to delete')
+        print('There is no files to delete')
         return True
         
     print(_files)
