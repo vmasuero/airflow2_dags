@@ -304,6 +304,27 @@ def upload_clickhouse(ti=None, **kwargs):
 
     
     return True
+    
+    
+@task(
+    executor_config={'LocalExecutor': {}},
+)
+def delete_older_files(ti=None, **kwargs):
+
+    conn = SFTPHook(ftp_conn_id=PM_HUAWEI_SERVERS[0])
+    _regex = r'huawei_twamp_v01_\d+_\d+(DST)?\.zip'
+    print('Regex: %s'%_regex)
+    
+    _remote_files = conn.list_directory(REMOTE_PATH)
+ 
+    _remote_files = [x for x in _remote_files if re.match(_regex,x)]
+    
+    if len(_remote_files) == 0:
+        raise AirflowFailException('No existen archivo en directorio remoto')
+        
+    print(_remote_files)
+    
+    return True
   
 with DAG(
     dag_id='dw_huawei_twamp',
@@ -323,5 +344,6 @@ with DAG(
     chain(
         get_dates(),
         download_files(),
-        upload_clickhouse()
+        #upload_clickhouse()
+        delete_older_files
     )
