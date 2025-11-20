@@ -309,20 +309,32 @@ def upload_clickhouse(ti=None, **kwargs):
 @task(
     executor_config={'LocalExecutor': {}},
 )
-def delete_older_files(ti=None, **kwargs):
+def delete_older_files(ti=None, logical_date=None, **kwargs):
 
     conn = SFTPHook(ftp_conn_id=PM_HUAWEI_SERVERS[0])
     _regex = r'huawei_twamp_v01_\d+_\d+(DST)?\.zip'
-    print('Regex: %s'%_regex)
+    
+    _current_date = logical_date
+    _delete_date = logical_date.date() - timedelta(days=7)
     
     _remote_files = conn.list_directory(REMOTE_PATH)
- 
     _remote_files = [x for x in _remote_files if re.match(_regex,x)]
     
+
     if len(_remote_files) == 0:
         raise AirflowFailException('No existen archivo en directorio remoto')
-        
+     
+
+    _files = pd.DataFrame(_remote_files, columns=['path'])
+    _files = _files.join( _files.path.str.extract(r'huawei_twamp_v\d+_\d+_(\d\d\d\d)(\d\d)(\d\d).*').rename(columns={0:'year',1:'month',2:'day'}).astype(int))
+    _files['date_f'] = _files.apply(lambda x: datetime(x.year, x.month, x.day), axis=1)
+    _files = _files.sort_values(by='date_f')
+    
+         
     print(_remote_files)
+    print(f'current date: {_current_date}')
+    print(f'delete files from date: {_delete_date}')
+    print(_files)
     
     return True
   
