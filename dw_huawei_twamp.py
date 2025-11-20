@@ -329,11 +329,16 @@ def delete_older_files(ti=None, logical_date=None, **kwargs):
     _files = _files.join( _files.path.str.extract(r'huawei_twamp_v\d+_\d+_(\d\d\d\d)(\d\d)(\d\d).*').rename(columns={0:'year',1:'month',2:'day'}).astype(int))
     _files['date_f'] = _files.apply(lambda x: datetime(x.year, x.month, x.day), axis=1)
     _files = _files.sort_values(by='date_f')
-    
+    _files = _files[_files.date_f < _delete_date]
          
     print(_remote_files)
     print(f'current date: {_current_date}')
     print(f'delete files from date: {_delete_date}')
+    
+    if len(_files) == 0:
+        print('There is not files to delete')
+        return True
+        
     print(_files)
     
     return True
