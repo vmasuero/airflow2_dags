@@ -345,5 +345,5 @@ with DAG(
         get_dates(),
         download_files(),
         #upload_clickhouse()
-        delete_older_files
+        delete_older_files()
     )
