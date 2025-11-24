@@ -336,10 +336,12 @@ def delete_older_files(ti=None, logical_date=None, **kwargs):
 
     if len(_files) == 0:
         print('There is no files to delete')
+        conn.close_conn()
         return True
         
-    print(_files)
-    
+    ti.xcom_push(key='files_to_delete', value=_files.path.values[0])
+
+    conn.close_conn()
     return True
   
 with DAG(
