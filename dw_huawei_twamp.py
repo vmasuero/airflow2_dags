@@ -346,6 +346,7 @@ def delete_older_files(ti=None, logical_date=None, **kwargs):
     except OSError:
         print(f"The file {_file_to_delete} couldn't be deleted")
 
+    print(f"The file {_file_to_delete} was deleted")
     conn.close_conn()
     return True
   
