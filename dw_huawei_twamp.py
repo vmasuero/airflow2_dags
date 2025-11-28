@@ -339,12 +339,12 @@ def delete_older_files(ti=None, logical_date=None, **kwargs):
         conn.close_conn()
         return True
     
-    _file_to_delete = _files.path.values[0]
+    _file_to_delete = f"{REMOTE_PATH}/{_files.path.values[0]}"
     ti.xcom_push(key='files_to_delete', value=_file_to_delete)
     try:
         conn.delete_file(path=_file_to_delete)
     except OSError:
-        print(f"The file {_file_to_delete} couldn't be deleted")
+        raise AirflowSkipException(f"The file {_file_to_delete} couldn't be deleted")
 
     print(f"The file {_file_to_delete} was deleted")
     conn.close_conn()
