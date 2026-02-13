@@ -21,8 +21,9 @@ from airflow.utils.helpers import chain
 REMOTE_PATH = '/export/home/sysm/opt/oss/server/var/fileint'
 HOURS_DELAY = 0
 
-SECRET_KEY ='2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
-ACCESS_KEY = 'd7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+SECRET_KEY =  'kxG5yz06WGgTn+sD9sgfHN2MW6PsiZp8CAyTQfxBf3U=' #'2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
+ACCESS_KEY =  '240686f7776d837ace9b17168af0b8c506c9f8b0'     #'d7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+
 REGION = 'sa-santiago-1'
 NAMESPACE = 'axosppplfddw'
 BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
