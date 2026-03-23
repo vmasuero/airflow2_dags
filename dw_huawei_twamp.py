@@ -16,13 +16,16 @@ from airflow.providers.sftp.hooks.sftp import SFTPHook
 from airflow.exceptions import AirflowException, AirflowFailException, AirflowSkipException
 from airflow.decorators import dag, task
 from airflow.utils.helpers import chain
+from airflow.models import Variable
 
 
 REMOTE_PATH = '/export/home/sysm/opt/oss/server/var/fileint'
 HOURS_DELAY = 0
 
-SECRET_KEY =  'kxG5yz06WGgTn+sD9sgfHN2MW6PsiZp8CAyTQfxBf3U=' #'2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
-ACCESS_KEY =  '240686f7776d837ace9b17168af0b8c506c9f8b0'     #'d7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+SECRET_KEY = Variable.get("OCI_SECRET_KEY") 
+ACCESS_KEY =  Variable.get("OCI_ACCESS_KEY") 
+
+
 
 REGION = 'sa-santiago-1'
 NAMESPACE = 'axosppplfddw'

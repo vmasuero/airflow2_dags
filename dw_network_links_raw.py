@@ -15,6 +15,9 @@ from airflow.decorators import dag, task
 
 from io import StringIO,BytesIO
 
+from airflow.models import Variable
+
+
 import clickhouse_connect
 
 SFTP_CONNECTION = 'DevOpsBandWidth'
@@ -25,8 +28,10 @@ HEADERS_PATH = 'NETWORK_COUNTERS/HEADERS'
 SAMPLING = '5min'
 
 
-SECRET_KEY =  'kxG5yz06WGgTn+sD9sgfHN2MW6PsiZp8CAyTQfxBf3U=' #'2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
-ACCESS_KEY =  '240686f7776d837ace9b17168af0b8c506c9f8b0'     #'d7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+
+SECRET_KEY = Variable.get("OCI_SECRET_KEY") 
+ACCESS_KEY =  Variable.get("OCI_ACCESS_KEY") 
+
 
 
 REGION = 'sa-santiago-1'
@@ -45,8 +50,8 @@ CLICKHOUSE_IP_SHARDS = ['chi-counters-counters-%s-0.clickhouse.svc.cluster.local
 
 CLUSTER = 'counters'
 CLICKHOUSE_PORT = 8123      
-CLICKHOUSE_USERNAME = 'dev_user' 
-CLICKHOUSE_PASSWORD = 'vtrclaro1234'      
+CLICKHOUSE_USERNAME = '' 
+CLICKHOUSE_PASSWORD = ''      
 DATABASE = 'OYM_COUNTERS' 
 TABLE = 'BW'
 TABLE_DIST = "%s_DIST"%TABLE
