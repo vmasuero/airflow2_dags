@@ -52,7 +52,7 @@ REGION = 'sa-santiago-1'
 NAMESPACE = 'axosppplfddw'
 BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
 ENDPOINT = "https://%s.compat.objectstorage.%s.oraclecloud.com"%(NAMESPACE,REGION)
-URL_PRESHARED = "https://objectstorage.sa-santiago-1.oraclecloud.com/p/p1E-ju_3JMGILHrsBzAiS7GE8LkBi-lQvks-IJBlJS1k9CdIqKv_5ivuU-nJ0iG-/n/axosppplfddw/b/bucket-scl-prod-monitoreosscc-datalake-001/o/"
+URL_PRESHARED =    Variable.get("OCI_URL_PRESHARED")  #"https://objectstorage.sa-santiago-1.oraclecloud.com/p/p1E-ju_3JMGILHrsBzAiS7GE8LkBi-lQvks-IJBlJS1k9CdIqKv_5ivuU-nJ0iG-/n/axosppplfddw/b/bucket-scl-prod-monitoreosscc-datalake-001/o/"
 
 HUAWEI_COUNTER_INVENTORY_S3 = 'Huawei/Inventory/HUAWEI_COUNTERS_INVENTORY.csv'
 
@@ -126,6 +126,9 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
     print('####################################################')
 
     print(ACCESS_KEY)
+    print(ACCESS_KEY)
+    print(OCI_URL_PRESHARED)
+    
     print('####################################################')
     
     print("Yesteraday Date in RAW version: %s "%data_interval_start)
