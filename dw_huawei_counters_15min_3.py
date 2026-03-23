@@ -127,7 +127,7 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
 
     print(ACCESS_KEY)
     print(ACCESS_KEY)
-    print(OCI_URL_PRESHARED)
+    print(URL_PRESHARED)
     
     print('####################################################')
     
