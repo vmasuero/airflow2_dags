@@ -126,7 +126,7 @@ def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  
     print('####################################################')
 
     print(ACCESS_KEY)
-    print(ACCESS_KEY)
+    print(SECRET_KEY)
     print(URL_PRESHARED)
     
     print('####################################################')
