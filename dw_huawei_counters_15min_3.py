@@ -9,6 +9,7 @@ from io import StringIO,BytesIO
 import tempfile
 import time
 from random import randint
+from airflow.models import Variable
 
 
 from airflow import DAG
@@ -42,8 +43,8 @@ PM_HUAWEI_SERVERS = [
 REMOTE_PATH = '/export/home/sysm/opt/oss/server/var/fileint/pm'
 HOURS_DELAY = 12
 
-SECRET_KEY =  'kxG5yz06WGgTn+sD9sgfHN2MW6PsiZp8CAyTQfxBf3U=' #'2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
-ACCESS_KEY =  '240686f7776d837ace9b17168af0b8c506c9f8b0'     #'d7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+SECRET_KEY =  Variable.get("OCI_SECRET_KEY") #'kxG5yz06WGgTn+sD9sgfHN2MW6PsiZp8CAyTQfxBf3U=' #'2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
+ACCESS_KEY =  Variable.get("OCI_ACCESS_KEY") #'240686f7776d837ace9b17168af0b8c506c9f8b0'     #'d7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
 REGION = 'sa-santiago-1'
 NAMESPACE = 'axosppplfddw'
 BUCKET = 'bucket-scl-prod-monitoreosscc-datalake-001'
