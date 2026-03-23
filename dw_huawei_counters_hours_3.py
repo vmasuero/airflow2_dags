@@ -19,7 +19,7 @@ from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import Kubernete
 from airflow.utils.helpers import chain
 
 from dask.distributed import Client, LocalCluster, Future, as_completed, fire_and_forget
-
+from airflow.models import Variable
 
 from redis import Redis
 
