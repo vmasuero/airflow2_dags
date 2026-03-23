@@ -47,7 +47,6 @@ SECRET_KEY =  Variable.get("OCI_SECRET_KEY") #'kxG5yz06WGgTn+sD9sgfHN2MW6PsiZp8C
 ACCESS_KEY =  Variable.get("OCI_ACCESS_KEY") #'240686f7776d837ace9b17168af0b8c506c9f8b0'     #'d7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
 
 
-print(ACCESS_KEY)
 
 REGION = 'sa-santiago-1'
 NAMESPACE = 'axosppplfddw'
@@ -124,6 +123,10 @@ def check_counter_file(ds=None, ti=None):
 )
 def get_dates(yesterday_ds = None, ds=None, ti=None, data_interval_start=None,  **kwargs):
     #2024-01-07
+    print('####################################################')
+
+    print(ACCESS_KEY)
+    print('####################################################')
     
     print("Yesteraday Date in RAW version: %s "%data_interval_start)
     _date_oper = data_interval_start-timedelta(hours=HOURS_DELAY)
