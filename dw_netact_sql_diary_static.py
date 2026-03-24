@@ -26,8 +26,14 @@ NETACT_TABLES_STATIC = [
 NETACT_IPS = ['172.16.42.133', '172.16.52.133']
 DB_DIR = 'netact/raw_tables_diary_static'
 
-SECRET_KEY =  'kxG5yz06WGgTn+sD9sgfHN2MW6PsiZp8CAyTQfxBf3U=' #'2DhT3mGRLmNDBOl9ZuxCLdic0jXSmfUiZ+niJrwp3cU='
-ACCESS_KEY =  '240686f7776d837ace9b17168af0b8c506c9f8b0'     #'d7556c3cc7c1996477a5c851b51e2f47ea4d00a6'
+
+from airflow.models import Variable
+
+SECRET_KEY = Variable.get("OCI_SECRET_KEY") 
+ACCESS_KEY =  Variable.get("OCI_ACCESS_KEY") 
+
+
+
 
 REGION = 'sa-santiago-1'
 NAMESPACE = 'axosppplfddw'
