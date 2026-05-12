@@ -65,8 +65,8 @@ NAMESPACE_K8S = 'airflow2'
 
 CLUSTER_DASK_IP = 'dask-cluster-airflow-scheduler.dask-cluster:8786'
 
-REDIS_URL = 'redis-huawei-master.airflow2'
-REDIS_EXPIRE = 60*60*24*2  #2 dias
+REDIS_URL = 'redis-huawei.airflow2'
+REDIS_EXPIRE = 60*60*24*3  #2 dias
 
 VERSION = 9
 
