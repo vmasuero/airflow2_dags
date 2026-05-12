@@ -38,6 +38,8 @@ PM_HUAWEI_SERVERS = [
     'HUAWEI_CM_5',
     'HUAWEI_CM_6',
     'HUAWEI_CM_7',
+    'HUAWEI_CM_8',
+    'HUAWEI_CM_9',
 ]
 
 REMOTE_PATH = '/export/home/sysm/opt/oss/server/var/fileint/pm'
